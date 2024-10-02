@@ -17,6 +17,4 @@ jobs:
         run: pip install --upgrade ruff
       - name: Run ruff
         run: |
-          ruff check djangocms_text
-          ruff check djangocms_text_ckeditor
-          ruff check tests
+          ruff check djangocms_text_ckeditor5

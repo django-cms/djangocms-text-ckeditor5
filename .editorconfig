@@ -36,5 +36,5 @@ max_line_length = 100
 [*.yml]
 indent_size = 2
 
-[djangocms_text_ckeditor/templates/cms/plugins/render_plugin_preview.html]
+[djangocms_text_ckeditor5/templates/cms/plugins/render_plugin_preview.html]
 insert_final_newline = false

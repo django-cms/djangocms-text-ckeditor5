@@ -5,7 +5,7 @@ const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 
 
 const distribution = {
-    ckeditor5: 'extension_text_ckeditor5/static/djangocms_text/',
+    ckeditor5: 'djangocms_text_ckeditor5/static/djangocms_text/',
 };
 
 module.exports = {
