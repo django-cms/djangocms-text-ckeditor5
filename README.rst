@@ -11,8 +11,8 @@ Features
 
 - **CKEditor5**: Look and feel of CKEditor5.
 - **Inline exiting**: CKEditor5 supports inline editing.
-- **Dynamic HTML attributes**: (not yet supported)
-- **Text-enabled plugins**: (not yet supported)
+- **Dynamic HTML attributes**: (not yet supported - help needed)
+- **Text-enabled plugins**: (not yet supported - help needed)
 
 
 Installation
