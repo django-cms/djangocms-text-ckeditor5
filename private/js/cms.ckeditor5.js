@@ -40,6 +40,8 @@ import MediaEmbed from '@ckeditor/ckeditor5-media-embed/src/mediaembed';
 import Paragraph from '@ckeditor/ckeditor5-paragraph/src/paragraph';
 import ParagraphButtonUI from '@ckeditor/ckeditor5-paragraph/src/paragraphbuttonui';
 import PasteFromOffice from '@ckeditor/ckeditor5-paste-from-office/src/pastefromoffice';
+import RemoveFormat from '@ckeditor/ckeditor5-remove-format/src/removeformat';
+import ShowBlocks from '@ckeditor/ckeditor5-show-blocks/src/showblocks';
 import Table from '@ckeditor/ckeditor5-table/src/table';
 import TableToolbar from '@ckeditor/ckeditor5-table/src/tabletoolbar';
 import TextTransformation from '@ckeditor/ckeditor5-typing/src/texttransformation';
@@ -54,6 +56,8 @@ class ClassicEditor extends ClassicEditorBase {}
 // class InlineEditor extends InlineEditorBase {}
 class BalloonEditor extends BalloonEditorBase {}
 
+// import CmsPlugin from './ckeditor5_plugins/cms.plugin';
+// import { CmsLink, LinkSuggestionsEditing } from "./ckeditor5_plugins/cms-link";
 
 // Plugins to include in the build.
 var builtinPlugins = [
@@ -91,6 +95,8 @@ var builtinPlugins = [
 	Paragraph,
     ParagraphButtonUI,
 	PasteFromOffice,
+    RemoveFormat,
+    ShowBlocks,
 	SourceEditing,
 	Table,
 	TableToolbar,
@@ -163,6 +169,7 @@ BalloonEditor.defaultConfig = {
         items: [
             'paragraph', 'heading2', 'heading3', 'heading4', 'heading5',
             '|',
+            'alignment', '|',
             'bulletedList', 'numberedList', 'outdent', 'indent', '|',
             // 'cms-plugin', '|',  'LinkPlugin',
             'codeblock', '|',
@@ -177,8 +184,18 @@ class CmsCKEditor5Plugin {
     constructor(props) {
         this._editors = {};
         this._CSS = [];
+        this._pluginNames = {
+            Table: 'insertTable',
+            Source: 'sourceEditing',
+            HorizontalRule: 'horizontalLine',
+            JustifyLeft: 'Alignment',
+            Strike: 'Strikethrough',
+        };
+        this._unsupportedPlugins = [
+            'Unlink', 'PasteFromWord', 'PasteText', 'Maximize',
+            'JustifyCenter', 'JustifyRight', 'JustifyBlock'
+        ];
         this._blockItems = [];
-
         for (const item of BalloonEditor.defaultConfig.blockToolbar.items) {
             if (item !== '|') {
                 this._blockItems.push(item.toLowerCase());
@@ -289,12 +306,13 @@ class CmsCKEditor5Plugin {
                         addingToBlock = true;
                         item = '|';
                     }
-                }
-                if (item === 'Table') {
-                    item = 'insertTable';
-                }
-                if (item === 'Source') {
-                    item = 'sourceEditing';
+                } else if (item === 'ShowBlocks' && inline) {
+                    continue;
+                } else if (this._pluginNames[item] !== undefined) {
+                    item = this._pluginNames[item];
+                } else if (this._unsupportedPlugins.includes(item)) {
+                    // No CKEditor 5 equivalent
+                    continue;
                 }
                 if (['-', '|'].includes(item)) {
                     if (addingToBlock) {
@@ -303,10 +321,12 @@ class CmsCKEditor5Plugin {
                         topToolbar.push(item);
                     }
                 } else if (Array.isArray(item)) {
-                    if (topToolbar.length > 0) {
-                        if (addingToBlock) {
+                    if (addingToBlock) {
+                        if (blockToolbar.length > 0) {
                             blockToolbar.push('|');
-                        } else {
+                        }
+                    } else {
+                        if (topToolbar.length > 0) {
                             topToolbar.push('|');
                         }
                     }
