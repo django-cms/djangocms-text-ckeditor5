@@ -1,4 +1,4 @@
-.cms-structure-mode-content {
+.cms-structure-mode-content, .cms-structure-mode-structure {
     .ck.ck-editor__editable_inline {
         padding: 0;
         & > :first-child {

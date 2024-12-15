@@ -53,11 +53,8 @@ import CmsPlugin from './ckeditor5_plugins/cms.plugin';
 //import { CmsLink, LinkSuggestionsEditing } from "./ckeditor5_plugins/cms-link";
 
 class ClassicEditor extends ClassicEditorBase {}
-// class InlineEditor extends InlineEditorBase {}
 class BalloonEditor extends BalloonEditorBase {}
 
-// import CmsPlugin from './ckeditor5_plugins/cms.plugin';
-// import { CmsLink, LinkSuggestionsEditing } from "./ckeditor5_plugins/cms-link";
 
 // Plugins to include in the build.
 var builtinPlugins = [
@@ -120,7 +117,6 @@ var defaultConfig = {
             'fontFamily', 'fontSize', 'fontColor', '|',
             'mediaEmbed', 'insertTable', 'horizontalLine', 'blockQuote',
 		],
-        shouldNotGroupWhenFull: true
 	},
     heading: {
         options: [
@@ -208,7 +204,7 @@ class CmsCKEditor5Plugin {
         if (!(el.id in this._editors)) {
             const inline = el.tagName !== 'TEXTAREA';
             this._update_options(options, inline);
-            console.log(this._blockItems, options);
+            console.log(options);
             if (!inline) {
                 ClassicEditor.create(el, options.options).then( editor => {
                     this._editors[el.id] = editor;
@@ -276,21 +272,9 @@ class CmsCKEditor5Plugin {
         if (options.options.licenseKey === undefined) {
             options.options.licenseKey = 'GPL';
         }
-        const _lowerCase = (s) => String(s[0]).toLowerCase() + String(s).slice(1);
-        const _update_spacer = (toolbar) => {
-            if (toolbar === undefined) {
-                return;
-            }
-            for (let i = 0; i < toolbar.length; i++) {
-                if (Array.isArray(toolbar[i])) {
-                    _update_spacer(toolbar[i]);
-                } else if (toolbar[i] === '-') {
-                    toolbar[i] = '|';
-                } else {
-                    toolbar[i] = _lowerCase(toolbar[i]);
-                }
-            }
-        };
+        if (options.url_endpoint) {
+            options.options.url_endpoint = options.url_endpoint;
+        }
 
         var blockToolbar = [];
         var topToolbar = [];
@@ -300,21 +284,25 @@ class CmsCKEditor5Plugin {
 
             for (var item of items) {
                 if (item === 'Format') {
+                    // Expand "Format" widget in inline editor
                     item = 'heading';
                     if (inline) {
                         blockToolbar.push('paragraph', 'heading2', 'heading3', 'heading4', 'heading5');
                         addingToBlock = true;
                         item = '|';
                     }
-                } else if (item === 'ShowBlocks' && inline) {
+                } else if (item === 'ShowBlocks' && inline || item === 'Source' && inline) {
+                    // No source editing or show blocks in inline editor
                     continue;
                 } else if (this._pluginNames[item] !== undefined) {
                     item = this._pluginNames[item];
                 } else if (this._unsupportedPlugins.includes(item)) {
-                    // No CKEditor 5 equivalent
+                    // Skip items with no CKEditor 5 equivalent
                     continue;
                 }
-                if (['-', '|'].includes(item)) {
+                if (item === '-') {
+                    continue;
+                } else if (item === '|') {
                     if (addingToBlock) {
                         blockToolbar.push(item);
                     } else {
@@ -342,11 +330,11 @@ class CmsCKEditor5Plugin {
         };
 
         buildToolbars(options.options.toolbar || []);
-        if (topToolbar.length >= 0) {
-            options.options.toolbar = topToolbar;
+        if (topToolbar.length > 0) {
+            options.options.toolbar = {items: topToolbar};
         }
-        if (blockToolbar.length >= 0) {
-            options.options.blockToolbar = blockToolbar;
+        if (blockToolbar.length > 0) {
+            options.options.blockToolbar = {items: blockToolbar};
         }
     }
 
