@@ -44,14 +44,16 @@ import Table from '@ckeditor/ckeditor5-table/src/table';
 import TableToolbar from '@ckeditor/ckeditor5-table/src/tabletoolbar';
 import TextTransformation from '@ckeditor/ckeditor5-typing/src/texttransformation';
 import SourceEditing from '@ckeditor/ckeditor5-source-editing/src/sourceediting';
-//import HorizontalLine from './ckeditor5-horizontal-line/src/horizontalline';
+import HorizontalLine from '@ckeditor/ckeditor5-horizontal-line/src/horizontalline';
 //import UserStyle from './ckeditor5-user-style/src/userstyle';
 
 import CmsPlugin from './ckeditor5_plugins/cms.plugin';
+//import { CmsLink, LinkSuggestionsEditing } from "./ckeditor5_plugins/cms-link";
 
 class ClassicEditor extends ClassicEditorBase {}
 // class InlineEditor extends InlineEditorBase {}
 class BalloonEditor extends BalloonEditorBase {}
+
 
 // Plugins to include in the build.
 var builtinPlugins = [
@@ -73,15 +75,17 @@ var builtinPlugins = [
 	BlockQuote,
 	Heading,
     HeadingButtonsUI,
-    //HorizontalLine,
+    HorizontalLine,
     // Base64UploadAdapter,
-	Image,
+	// Image,
 	// ImageCaption,
 	// ImageStyle,
 	// ImageToolbar,
     // ImageUpload,
 	Indent,
-	Link,
+	//CmsLink,
+    Link,
+    //LinkSuggestionsEditing,
 	List,
 	MediaEmbed,
 	Paragraph,
@@ -104,12 +108,11 @@ var defaultConfig = {
 	toolbar: {
 		items: [
             'heading', '|',
-            'bold', 'italic', 'alignment', '|',
-			'link', '|',
-            'bulletedList', 'numberedList', 'outdent', 'indent', '|',
+            'bold', 'italic', 'underline', 'alignment', '|', 'link',
+			'bulletedList', 'numberedList', 'outdent', 'indent', '|',
             'code', 'codeblock', '|',
             'fontFamily', 'fontSize', 'fontColor', '|',
-            'mediaEmbed', 'insertTable', // 'horizontalLine', 'blockQuote',
+            'mediaEmbed', 'insertTable', 'horizontalLine', 'blockQuote',
 		],
         shouldNotGroupWhenFull: true
 	},
@@ -136,7 +139,7 @@ var defaultConfig = {
 		]
 	},
 	// This value must be kept in sync with the language defined in webpack.config.js.
-	language: 'en'
+	language: 'en',
 };
 
 ClassicEditor.defaultConfig = Object.assign({}, defaultConfig);
@@ -163,29 +166,38 @@ BalloonEditor.defaultConfig = {
             'bulletedList', 'numberedList', 'outdent', 'indent', '|',
             // 'cms-plugin', '|',  'LinkPlugin',
             'codeblock', '|',
-            'mediaEmbed', 'insertTable', // 'horizontalLine', 'blockQuote',
+            'mediaEmbed', 'insertTable', 'horizontalLine', 'blockQuote',
         ],
         shouldNotGroupWhenFull: true
     }
 };
 
 
-class CMSCKEditor5Plugin {
+class CmsCKEditor5Plugin {
     constructor(props) {
         this._editors = {};
         this._CSS = [];
+        this._blockItems = [];
+
+        for (const item of BalloonEditor.defaultConfig.blockToolbar.items) {
+            if (item !== '|') {
+                this._blockItems.push(item.toLowerCase());
+            }
+        }
     }
 
-       // initializes the editor on the target element, with the given html code
+    // initializes the editor on the target element, with the given html code
     create (el, inModal, content, options, save_callback) {
         if (!(el.id in this._editors)) {
             const inline = el.tagName !== 'TEXTAREA';
+            this._update_options(options, inline);
+            console.log(this._blockItems, options);
             if (!inline) {
-                ClassicEditor.create(el).then( editor => {
+                ClassicEditor.create(el, options.options).then( editor => {
                     this._editors[el.id] = editor;
                 });
             } else {
-                BalloonEditor.create(el).then( editor => {
+                BalloonEditor.create(el, options.options).then( editor => {
                     el.classList.remove('ck-content');  // remove Ckeditor 5 default styles
                     this._editors[el.id] = editor;
                     const initialContent = editor.getData();
@@ -240,6 +252,84 @@ class CMSCKEditor5Plugin {
         }
     }
 
+    _update_options(options, inline) {
+        if (options.options === undefined) {
+            options.options = {};
+        }
+        if (options.options.licenseKey === undefined) {
+            options.options.licenseKey = 'GPL';
+        }
+        const _lowerCase = (s) => String(s[0]).toLowerCase() + String(s).slice(1);
+        const _update_spacer = (toolbar) => {
+            if (toolbar === undefined) {
+                return;
+            }
+            for (let i = 0; i < toolbar.length; i++) {
+                if (Array.isArray(toolbar[i])) {
+                    _update_spacer(toolbar[i]);
+                } else if (toolbar[i] === '-') {
+                    toolbar[i] = '|';
+                } else {
+                    toolbar[i] = _lowerCase(toolbar[i]);
+                }
+            }
+        };
+
+        var blockToolbar = [];
+        var topToolbar = [];
+
+        const buildToolbars = (items) => {
+            var addingToBlock = false;
+
+            for (var item of items) {
+                if (item === 'Format') {
+                    item = 'heading';
+                    if (inline) {
+                        blockToolbar.push('paragraph', 'heading2', 'heading3', 'heading4', 'heading5');
+                        addingToBlock = true;
+                        item = '|';
+                    }
+                }
+                if (item === 'Table') {
+                    item = 'insertTable';
+                }
+                if (item === 'Source') {
+                    item = 'sourceEditing';
+                }
+                if (['-', '|'].includes(item)) {
+                    if (addingToBlock) {
+                        blockToolbar.push(item);
+                    } else {
+                        topToolbar.push(item);
+                    }
+                } else if (Array.isArray(item)) {
+                    if (topToolbar.length > 0) {
+                        if (addingToBlock) {
+                            blockToolbar.push('|');
+                        } else {
+                            topToolbar.push('|');
+                        }
+                    }
+                    buildToolbars(item);
+                } else if (this._blockItems.includes(item.toLowerCase()) && inline) {
+                    blockToolbar.push(item);
+                    addingToBlock = true;
+                } else {
+                    topToolbar.push(item);
+                    addingToBlock = false;
+                }
+            }
+        };
+
+        buildToolbars(options.options.toolbar || []);
+        if (topToolbar.length >= 0) {
+            options.options.toolbar = topToolbar;
+        }
+        if (blockToolbar.length >= 0) {
+            options.options.blockToolbar = blockToolbar;
+        }
+    }
+
     _init() {
         this.editor.ui.componentFactory.add('cms-plugin', locale => {
             const view = new ButtonView(locale);
@@ -264,4 +354,4 @@ class CMSCKEditor5Plugin {
 }
 
 
-window.cms_editor_plugin = new CMSCKEditor5Plugin({});
+window.cms_editor_plugin = new CmsCKEditor5Plugin({});
