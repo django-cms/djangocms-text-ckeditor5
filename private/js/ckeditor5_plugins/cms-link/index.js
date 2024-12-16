@@ -2,6 +2,7 @@
 /* jshint esversion: 6 */
 
 // index.js
-import CMSLinkPlugin from './src/cmsLinkPlugin';
+import CmsLink from './src/cmsLink';
+import LinkSuggestionsEditing from './src/linksuggestionediting';
 
-export default CMSLinkPlugin;
+export { CmsLink, LinkSuggestionsEditing };

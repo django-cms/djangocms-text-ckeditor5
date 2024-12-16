@@ -50,7 +50,7 @@ import HorizontalLine from '@ckeditor/ckeditor5-horizontal-line/src/horizontalli
 //import UserStyle from './ckeditor5-user-style/src/userstyle';
 
 import CmsPlugin from './ckeditor5_plugins/cms.plugin';
-//import { CmsLink, LinkSuggestionsEditing } from "./ckeditor5_plugins/cms-link";
+import { CmsLink, LinkSuggestionsEditing } from "./ckeditor5_plugins/cms-link";
 
 class ClassicEditor extends ClassicEditorBase {}
 class BalloonEditor extends BalloonEditorBase {}
@@ -84,9 +84,9 @@ var builtinPlugins = [
 	// ImageToolbar,
     // ImageUpload,
 	Indent,
-	//CmsLink,
     Link,
-    //LinkSuggestionsEditing,
+    CmsLink,
+    LinkSuggestionsEditing,
 	List,
 	MediaEmbed,
 	Paragraph,
@@ -99,7 +99,7 @@ var builtinPlugins = [
 	TableToolbar,
 	TextTransformation,
     // UserStyle,
-    // CmsPlugin
+    CmsPlugin
 ];
 
 ClassicEditor.builtinPlugins = builtinPlugins;
@@ -145,8 +145,7 @@ var defaultConfig = {
 };
 
 ClassicEditor.defaultConfig = Object.assign({}, defaultConfig);
-ClassicEditor.defaultConfig.toolbar.items.push('|', 'sourceEditing');
-// InlineEditor.defaultConfig = defaultConfig;
+ClassicEditor.defaultConfig.toolbar.items.push('|', 'SourceEditing');
 BalloonEditor.defaultConfig = {
     heading: defaultConfig.heading,
     table: defaultConfig.table,
@@ -182,7 +181,7 @@ class CmsCKEditor5Plugin {
         this._CSS = [];
         this._pluginNames = {
             Table: 'insertTable',
-            Source: 'sourceEditing',
+            Source: 'SourceEditing',
             HorizontalRule: 'horizontalLine',
             JustifyLeft: 'Alignment',
             Strike: 'Strikethrough',
@@ -291,7 +290,7 @@ class CmsCKEditor5Plugin {
                         addingToBlock = true;
                         item = '|';
                     }
-                } else if (item === 'ShowBlocks' && inline || item === 'Source' && inline) {
+                } else if (inline && ['ShowBlocks', 'Source', 'sourceEditing'].includes(item)) {
                     // No source editing or show blocks in inline editor
                     continue;
                 } else if (this._pluginNames[item] !== undefined) {
