@@ -41,12 +41,10 @@ settings:
 
     INSTALLED_APPS = [..., "djangocms_text_ckeditor5", ...]
 
-Add an editor frontend to your installed apps (if different from the
-default TipTap frontend), and set the editor you want to use:
+and set the editor you want to use:
 
 .. code-block:: python
 
-    INSTALLED_APPS = [..., "djangocms_text_ckeditor5", ...]
     TEXT_EDITOR = "djangocms_text_ckeditor5.ckeditor5"
 
 
