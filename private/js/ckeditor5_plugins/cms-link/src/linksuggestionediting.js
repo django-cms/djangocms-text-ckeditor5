@@ -198,7 +198,7 @@ export default class LinkSuggestionsEditing extends Plugin {
 
         linkCommand.set('cmsHref', null);
         model.document.on('change', () => {
-            linkCommand['cmsHref'] = selection.getAttribute('data-cms-href');
+            linkCommand['cmsHref'] = selection.getAttribute('cmsHref');
         });
     }
 

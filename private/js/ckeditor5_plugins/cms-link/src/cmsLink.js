@@ -47,6 +47,9 @@ export default class CmsLink extends Plugin {
                             const button = linkActionsView.previewButtonView.element;
                             button.firstElementChild.textContent = data.text;
                         });
+                    } else {
+                        const button = linkActionsView.previewButtonView.element;
+                        button.firstElementChild.textContent = selection.getAttribute('linkHref');
                     }
                     return;
                 }
