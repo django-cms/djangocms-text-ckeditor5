@@ -124,7 +124,7 @@ export default class CmsLink extends Plugin {
         const {editor} = this;
         const linkCommand = editor.commands.get('link');
 
-        this.bind('cmsHref').to(linkCommand, 'data-cms-href');
+        this.bind('cmsHref').to(linkCommand, 'cmsHref');
     }
 
     /**
