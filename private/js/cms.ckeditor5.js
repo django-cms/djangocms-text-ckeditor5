@@ -5,7 +5,6 @@
 
 // The editor creator to use.
 import ClassicEditorBase from '@ckeditor/ckeditor5-editor-classic/src/classiceditor';
-import InlineEditorBase from '@ckeditor/ckeditor5-editor-inline/src/inlineeditor';
 import BalloonEditorBase from  '@ckeditor/ckeditor5-editor-balloon/src/ballooneditor';
 import BlockToolbar from '@ckeditor/ckeditor5-ui/src/toolbar/block/blocktoolbar';
 
@@ -63,7 +62,6 @@ var builtinPlugins = [
 	Autoformat,
 	Autosave,
     Alignment,
-    BlockToolbar,
 	Bold,
 	Italic,
     Underline,
@@ -103,8 +101,8 @@ var builtinPlugins = [
 ];
 
 ClassicEditor.builtinPlugins = builtinPlugins;
-// InlineEditor.builtinPlugins = builtinPlugins;
 BalloonEditor.builtinPlugins = builtinPlugins;
+BalloonEditor.builtinPlugins.push(BlockToolbar);
 
 // Editor configuration.
 var defaultConfig = {
@@ -216,6 +214,7 @@ class CmsCKEditor5Plugin {
                     editor.model.document.on('change:data', () => el.dataset.changed='true');
                     editor.ui.focusTracker.on( 'change:isFocused', ( evt, name, isFocused ) => {
                         el.classList.remove('ck-content');  // remove Ckeditor 5 default styles
+                        console.log('focus', evt, name, isFocused, el);
                         if ( !isFocused ) {
                             // change:data event is not reliable, so we need to double-check
                             if (el.dataset.changed !== 'true' && editor.getData() !== initialContent) {

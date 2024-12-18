@@ -2,7 +2,7 @@
 /* jshint esversion: 11 */
 
 import {Plugin} from 'ckeditor5/src/core';
-import {SwitchButtonView, View, ViewCollection} from 'ckeditor5/src/ui';
+import { isLinkElement } from '@ckeditor/ckeditor5-link/src/utils';
 import LinkSuggestionsEditing from './linksuggestionediting';
 import LinkField from "./cms.linkfield";
 
@@ -25,18 +25,105 @@ export default class CmsLink extends Plugin {
         this._handleDataLoadingIntoExtraFormField();
     }
 
+    _defineConverters() {
+        const editor = this.editor;
+
+        // UPCAST: From view (HTML) to the model
+            editor.conversion.for('upcast').elementToAttribute({
+            view: {
+                name: 'a',
+                attributes: {
+                    'data-cms-href': true
+                },
+            },
+            model: {
+                key: 'cmsHref',
+                value: (viewElement) => viewElement.getAttribute('data-cms-href'),
+            },
+        });
+
+        // DOWNCAST: From model to view (HTML)
+        editor.conversion.for('downcast').attributeToElement({
+            model: 'cmsHref',
+            view: (value, {writer}) => {
+                const viewAttributes = {};
+                viewAttributes['data-cms-href'] = value;
+                const linkViewElement = writer.createAttributeElement(
+                    'a',
+                    viewAttributes,
+                    {priority: 5},
+                );
+
+                // Without it the isLinkElement() will not recognize the link and the UI will not show up
+                // when the user clicks a link.
+                writer.setCustomProperty('link', true, linkViewElement);
+
+                return linkViewElement;
+            },
+        });
+    }
+
+    _handleExtraAttributeValues() {
+        const editor = this.editor;
+
+        // Extend the link command to handle the custom attribute
+        editor.commands.get('link').on('execute', (evt, data) => {
+            console.log(data);
+            if (data.linkHref) {
+                const model = editor.model;
+                const selection = model.document.selection;
+
+                model.change((writer) => {
+                    editor.execute('link', ...args);
+
+                    const firstPosition = selection.getFirstPosition();
+                    if (selection.isCollapsed) {
+                        const node = firstPosition.textNode || firstPosition.nodeBefore;
+                        if (data.cmsHref) {
+                            writer.setAttribute('cmsHref', data.cmsHref, writer.createRangeOn(node));
+                        } else {
+                            writer.removeAttribute('cmsHref', writer.createRangeOn(node));
+                        }
+
+                        writer.removeSelectionAttribute('cmsHref');
+                    } else {
+                        const ranges = model.schema.getValidRanges(
+                            selection.getRanges(),
+                            'cmsHref',
+                        );
+
+                        // eslint-disable-next-line no-restricted-syntax
+                        for (const range of ranges) {
+                            if (data.cmsHref) {
+                                writer.setAttribute('cmsHref', data.cmsHref, range);
+                            } else {
+                                writer.removeAttribute('cmsHref', range);
+                            }
+                        }
+                    }
+                });
+            }
+        });
+
+    }
+
     _enableLinkAutocomplete() {
         const {editor} = this;
         const linkFormView = editor.plugins.get('LinkUI').formView;
         const linkActionsView = editor.plugins.get('LinkUI').actionsView;
 
-        let wasAutocompleteAdded = false;
+        let autoComplete = null;
 
         editor.plugins
             .get('ContextualBalloon')
             .on('set:visibleView', (evt, propertyName, newValue) => {
+                if (newValue !== linkFormView && newValue !== linkActionsView) {
+                    return;
+                }
+
                 const selection = editor.model.document.selection;
                 const cmsHref = selection.getAttribute('cmsHref');
+                const linkHref = selection.getAttribute('linkHref');
 
                 if (newValue === linkActionsView) {
                     // Add the link target name of a cms link into the action view
@@ -47,7 +134,7 @@ export default class CmsLink extends Plugin {
                             const button = linkActionsView.previewButtonView.element;
                             button.firstElementChild.textContent = data.text;
                         });
-                    } else {
+                    } else if (linkHref) {
                         const button = linkActionsView.previewButtonView.element;
                         button.firstElementChild.textContent = selection.getAttribute('linkHref');
                     }
@@ -60,7 +147,11 @@ export default class CmsLink extends Plugin {
                  * @type {boolean}
                  */
 
-                if (wasAutocompleteAdded) {
+                if (autoComplete !== null) {
+                    // Already added, just reset it, if no link exists
+                    autoComplete.selectElement.value = cmsHref || '';
+                    autoComplete.urlElement.value = linkHref || '';
+                    autoComplete.populateField();
                     return;
                 }
                 const hiddenInput = document.createElement('input');
@@ -72,10 +163,9 @@ export default class CmsLink extends Plugin {
                     linkFormView.urlInputView.fieldView.element
                 );
                 linkFormView.urlInputView.fieldView.element.parentNode.querySelector('label')?.remove();
-                new LinkField(linkFormView.urlInputView.fieldView.element, {
+                autoComplete = new LinkField(linkFormView.urlInputView.fieldView.element, {
                     url: editor.config.get('url_endpoint') || ''
                 });
-                wasAutocompleteAdded = true;
             });
     }
 

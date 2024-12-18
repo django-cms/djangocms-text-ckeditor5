@@ -9,16 +9,17 @@ class LinkField {
         this.options = options;
         this.urlElement = element;
         this.form = element.closest("form");
-        this.selectElement = this.form.querySelector(`input[name="${this.urlElement.id + '_select'}"]`);
+        this.selectElement = this.form?.querySelector(`input[name="${this.urlElement.id + '_select'}"]`);
         if (this.selectElement) {
             this.urlElement.setAttribute('type', 'hidden');  // Two input types?
             this.selectElement.setAttribute('type', 'hidden');  // Make hidden and add common input
-            this.prepareField();
+            this.createInput();
             this.registerEvents();
         }
+        this.populateField();
     }
 
-    prepareField() {
+    createInput() {
         this.inputElement = document.createElement('input');
         this.inputElement.setAttribute('type', 'text');
         this.inputElement.setAttribute('autocomplete', 'off');
@@ -28,21 +29,7 @@ class LinkField {
         this.inputElement.setAttribute('placeholder', this.urlElement.getAttribute('placeholder') ||'');
         this.inputElement.className = this.urlElement.className;
         this.inputElement.classList.add('cms-linkfield-input');
-        if (this.selectElement.value) {
-            this.handleChange({target: this.selectElement});
-            this.inputElement.classList.add('cms-linkfield-selected');
-        } else if (this.urlElement.value) {
-            this.inputElement.value = this.urlElement.value;
-            this.inputElement.classList.remove('cms-linkfield-selected');
-        }
-        if (this.selectElement.getAttribute('data-value')) {
-            this.inputElement.value = this.selectElement.getAttribute('data-value');
-            this.inputElement.classList.add('cms-linkfield-selected');
-        }
-        if (this.selectElement.getAttribute('data-href')) {
-            this.urlElement.value = this.selectElement.getAttribute('data-href');
-            this.inputElement.classList.add('cms-linkfield-selected');
-        }
+
         this.wrapper = document.createElement('div');
         this.wrapper.classList.add('cms-linkfield-wrapper');
         this.urlElement.insertAdjacentElement('afterend', this.wrapper);
@@ -54,6 +41,31 @@ class LinkField {
         }
         this.wrapper.appendChild(this.inputElement);
         this.wrapper.appendChild(this.dropdown);
+
+    }
+
+    populateField() {
+        if (this.selectElement) {
+            if (this.selectElement.value) {
+                this.handleChange();
+                this.inputElement.classList.add('cms-linkfield-selected');
+            } else if (this.urlElement.value) {
+                this.inputElement.value = this.urlElement.value;
+                this.inputElement.classList.remove('cms-linkfield-selected');
+            } else {
+                this.inputElement.value = '';
+                this.inputElement.classList.remove('cms-linkfield-selected');
+            }
+            if (this.selectElement.getAttribute('data-value')) {
+                this.inputElement.value = this.selectElement.getAttribute('data-value');
+                this.inputElement.classList.add('cms-linkfield-selected');
+            }
+            if (this.selectElement.getAttribute('data-href')) {
+                this.urlElement.value = this.selectElement.getAttribute('data-href');
+                this.inputElement.classList.add('cms-linkfield-selected');
+            }
+            this.dropdown.innerHTML = '';  // CSS hides dropdown when empty
+        }
     }
 
     registerEvents() {
@@ -146,7 +158,7 @@ class LinkField {
         this.dropdown.innerHTML = '';  // CSS hides dropdown when empty
     }
 
-    handleChange(event) {
+    handleChange() {
         if (this.selectElement.value) {
             fetch(this.options.url + '?g=' + encodeURIComponent(this.selectElement.value))
                 .then(response => response.json())
