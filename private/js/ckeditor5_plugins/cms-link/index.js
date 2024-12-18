@@ -2,6 +2,6 @@
 /* jshint esversion: 6 */
 
 // index.js
-import CMSLinkPlugin from './src/cmsLinkPlugin';
+import CmsLink from './src/cmsLink';
 
-export default CMSLinkPlugin;
+export default CmsLink;

@@ -7,6 +7,10 @@
     }
 }
 
+.cms-editor-inline-wrapper.ck a {
+    pointer-events: none;
+}
+
 .cms-admin.app-djangocms_text.model-text .ck-editor {
     border: none;
     background: var(--dca-white);

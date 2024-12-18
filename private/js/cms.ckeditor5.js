@@ -5,7 +5,6 @@
 
 // The editor creator to use.
 import ClassicEditorBase from '@ckeditor/ckeditor5-editor-classic/src/classiceditor';
-import InlineEditorBase from '@ckeditor/ckeditor5-editor-inline/src/inlineeditor';
 import BalloonEditorBase from  '@ckeditor/ckeditor5-editor-balloon/src/ballooneditor';
 import BlockToolbar from '@ckeditor/ckeditor5-ui/src/toolbar/block/blocktoolbar';
 
@@ -50,20 +49,19 @@ import HorizontalLine from '@ckeditor/ckeditor5-horizontal-line/src/horizontalli
 //import UserStyle from './ckeditor5-user-style/src/userstyle';
 
 import CmsPlugin from './ckeditor5_plugins/cms.plugin';
-//import { CmsLink, LinkSuggestionsEditing } from "./ckeditor5_plugins/cms-link";
+import CmsLink from "./ckeditor5_plugins/cms-link";
 
 class ClassicEditor extends ClassicEditorBase {}
 class BalloonEditor extends BalloonEditorBase {}
 
 
 // Plugins to include in the build.
-var builtinPlugins = [
+const builtinPlugins = [
 	Essentials,
 	// UploadAdapter,
 	Autoformat,
 	Autosave,
     Alignment,
-    BlockToolbar,
 	Bold,
 	Italic,
     Underline,
@@ -84,9 +82,8 @@ var builtinPlugins = [
 	// ImageToolbar,
     // ImageUpload,
 	Indent,
-	//CmsLink,
     Link,
-    //LinkSuggestionsEditing,
+    CmsLink,
 	List,
 	MediaEmbed,
 	Paragraph,
@@ -98,16 +95,15 @@ var builtinPlugins = [
 	Table,
 	TableToolbar,
 	TextTransformation,
-    // UserStyle,
-    // CmsPlugin
+    CmsPlugin
 ];
 
 ClassicEditor.builtinPlugins = builtinPlugins;
-// InlineEditor.builtinPlugins = builtinPlugins;
 BalloonEditor.builtinPlugins = builtinPlugins;
+BalloonEditor.builtinPlugins.push(BlockToolbar);
 
 // Editor configuration.
-var defaultConfig = {
+const defaultConfig = {
 	toolbar: {
 		items: [
             'heading', '|',
@@ -145,8 +141,7 @@ var defaultConfig = {
 };
 
 ClassicEditor.defaultConfig = Object.assign({}, defaultConfig);
-ClassicEditor.defaultConfig.toolbar.items.push('|', 'sourceEditing');
-// InlineEditor.defaultConfig = defaultConfig;
+ClassicEditor.defaultConfig.toolbar.items.push('|', 'SourceEditing');
 BalloonEditor.defaultConfig = {
     heading: defaultConfig.heading,
     table: defaultConfig.table,
@@ -182,7 +177,7 @@ class CmsCKEditor5Plugin {
         this._CSS = [];
         this._pluginNames = {
             Table: 'insertTable',
-            Source: 'sourceEditing',
+            Source: 'SourceEditing',
             HorizontalRule: 'horizontalLine',
             JustifyLeft: 'Alignment',
             Strike: 'Strikethrough',
@@ -204,7 +199,6 @@ class CmsCKEditor5Plugin {
         if (!(el.id in this._editors)) {
             const inline = el.tagName !== 'TEXTAREA';
             this._update_options(options, inline);
-            console.log(options);
             if (!inline) {
                 ClassicEditor.create(el, options.options).then( editor => {
                     this._editors[el.id] = editor;
@@ -276,14 +270,34 @@ class CmsCKEditor5Plugin {
             options.options.url_endpoint = options.url_endpoint;
         }
 
-        var blockToolbar = [];
-        var topToolbar = [];
+        let blockToolbar = [];
+        let topToolbar = [];
+        let addingToBlock = false;
 
         const buildToolbars = (items) => {
-            var addingToBlock = false;
+            for (let item of items) {
+                // Transform
+                if (this._pluginNames[item] !== undefined) {
+                    item = this._pluginNames[item];
+                }
 
-            for (var item of items) {
-                if (item === 'Format') {
+                // Add (if applicable)
+                if (Array.isArray(item)) {
+                    if (addingToBlock) {
+                        if (blockToolbar.length > 0) {
+                            blockToolbar.push('|');
+                        }
+                    } else if (topToolbar.length > 0) {
+                        topToolbar.push('|');
+                    }
+                    buildToolbars(item);
+                } else if (inline && ['ShowBlocks', 'SourceEditing'].includes(item)) {
+                    // No source editing or show blocks in inline editor
+                    continue;
+                } else if (this._unsupportedPlugins.includes(item) || item === '-') {
+                    // Skip items with no CKEditor 5 equivalent
+                    continue;
+                } else if (item === 'Format') {
                     // Expand "Format" widget in inline editor
                     item = 'heading';
                     if (inline) {
@@ -291,34 +305,12 @@ class CmsCKEditor5Plugin {
                         addingToBlock = true;
                         item = '|';
                     }
-                } else if (item === 'ShowBlocks' && inline || item === 'Source' && inline) {
-                    // No source editing or show blocks in inline editor
-                    continue;
-                } else if (this._pluginNames[item] !== undefined) {
-                    item = this._pluginNames[item];
-                } else if (this._unsupportedPlugins.includes(item)) {
-                    // Skip items with no CKEditor 5 equivalent
-                    continue;
-                }
-                if (item === '-') {
-                    continue;
                 } else if (item === '|') {
                     if (addingToBlock) {
                         blockToolbar.push(item);
                     } else {
                         topToolbar.push(item);
                     }
-                } else if (Array.isArray(item)) {
-                    if (addingToBlock) {
-                        if (blockToolbar.length > 0) {
-                            blockToolbar.push('|');
-                        }
-                    } else {
-                        if (topToolbar.length > 0) {
-                            topToolbar.push('|');
-                        }
-                    }
-                    buildToolbars(item);
                 } else if (this._blockItems.includes(item.toLowerCase()) && inline) {
                     blockToolbar.push(item);
                     addingToBlock = true;
