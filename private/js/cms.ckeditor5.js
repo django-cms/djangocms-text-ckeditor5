@@ -49,7 +49,7 @@ import HorizontalLine from '@ckeditor/ckeditor5-horizontal-line/src/horizontalli
 //import UserStyle from './ckeditor5-user-style/src/userstyle';
 
 import CmsPlugin from './ckeditor5_plugins/cms.plugin';
-import { CmsLink, LinkSuggestionsEditing } from "./ckeditor5_plugins/cms-link";
+import CmsLink from "./ckeditor5_plugins/cms-link";
 
 class ClassicEditor extends ClassicEditorBase {}
 class BalloonEditor extends BalloonEditorBase {}
@@ -84,7 +84,6 @@ var builtinPlugins = [
 	Indent,
     Link,
     CmsLink,
-    LinkSuggestionsEditing,
 	List,
 	MediaEmbed,
 	Paragraph,

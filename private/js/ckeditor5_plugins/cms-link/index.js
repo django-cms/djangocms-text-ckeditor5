@@ -3,6 +3,5 @@
 
 // index.js
 import CmsLink from './src/cmsLink';
-import LinkSuggestionsEditing from './src/linksuggestionediting';
 
-export { CmsLink, LinkSuggestionsEditing };
+export default CmsLink;
