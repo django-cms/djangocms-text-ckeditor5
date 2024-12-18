@@ -246,7 +246,7 @@ export default class CmsLink extends Plugin {
                         });
                     } else if (linkHref) {
                         // Add the link target of a regular link into the action view
-                        linkActionsView.previewButtonView.element.label = selection.getAttribute('linkHref');
+                        linkActionsView.previewButtonView.label = selection.getAttribute('linkHref');
                         editor.ui.update();  // Update the UI to account for the new button label
                     }
                     return;
@@ -256,6 +256,7 @@ export default class CmsLink extends Plugin {
                     // AutoComplete already added, just reset it, if no link exists
                     autoComplete.selectElement.value = cmsHref || '';
                     autoComplete.urlElement.value = linkHref || '';
+                    autoComplete.inputElement.value = linkActionsView.previewButtonView.label;
                     autoComplete.populateField();
                     autoComplete.inputElement.focus();
                     return;
