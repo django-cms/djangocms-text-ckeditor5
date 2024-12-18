@@ -230,7 +230,7 @@ export default class CmsLink extends Plugin {
                     return;
                 }
 
-                const selection = editor.model.document.selection;
+                const {selection} = editor.model.document;
                 const cmsHref = selection.getAttribute('cmsHref');
                 const linkHref = selection.getAttribute('linkHref');
 
