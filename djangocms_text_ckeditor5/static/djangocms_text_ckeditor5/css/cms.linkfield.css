@@ -18,7 +18,7 @@
             z-index: 1;
             visibility: hidden;
             position: absolute;
-            max-block-size: 400px;
+            max-block-size: 200px;
             overflow: auto;
             inset-inline-start: 0;
             inset-block-start: 100%;

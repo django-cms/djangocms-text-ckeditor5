@@ -118,6 +118,7 @@ export default class CmsLink extends Plugin {
             .get('ContextualBalloon')
             .on('set:visibleView', (evt, propertyName, newValue) => {
                 if (newValue !== linkFormView && newValue !== linkActionsView) {
+                    // Only run on the two link views
                     return;
                 }
 
@@ -128,30 +129,27 @@ export default class CmsLink extends Plugin {
                 if (newValue === linkActionsView) {
                     // Add the link target name of a cms link into the action view
                     if(cmsHref && editor.config.get('url_endpoint')) {
+                        linkActionsView.previewButtonView.label = '...';
                         fetch(editor.config.get('url_endpoint') + '?g=' + encodeURIComponent(cmsHref))
                         .then(response => response.json())
                         .then(data => {
-                            const button = linkActionsView.previewButtonView.element;
-                            button.firstElementChild.textContent = data.text;
+                            linkActionsView.previewButtonView.label = data.text;
+                            editor.ui.update();  // Update the UI to account for the new button label
                         });
                     } else if (linkHref) {
-                        const button = linkActionsView.previewButtonView.element;
-                        button.firstElementChild.textContent = selection.getAttribute('linkHref');
+                        // Add the link target of a regular link into the action view
+                        linkActionsView.previewButtonView.element.label = selection.getAttribute('linkHref');
+                        editor.ui.update();  // Update the UI to account for the new button label
                     }
                     return;
                 }
 
-                /**
-                 * Used to know if a selection was made from the autocomplete results.
-                 *
-                 * @type {boolean}
-                 */
-
                 if (autoComplete !== null) {
-                    // Already added, just reset it, if no link exists
+                    // AutoComplete already added, just reset it, if no link exists
                     autoComplete.selectElement.value = cmsHref || '';
                     autoComplete.urlElement.value = linkHref || '';
                     autoComplete.populateField();
+                    autoComplete.inputElement.focus();
                     return;
                 }
                 const hiddenInput = document.createElement('input');
@@ -162,10 +160,12 @@ export default class CmsLink extends Plugin {
                     hiddenInput,
                     linkFormView.urlInputView.fieldView.element
                 );
+                // Label is misleading - remove it
                 linkFormView.urlInputView.fieldView.element.parentNode.querySelector('label')?.remove();
                 autoComplete = new LinkField(linkFormView.urlInputView.fieldView.element, {
                     url: editor.config.get('url_endpoint') || ''
                 });
+                autoComplete.inputElement.focus();
             });
     }
 
