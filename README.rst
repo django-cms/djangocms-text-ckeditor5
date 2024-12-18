@@ -59,7 +59,7 @@ License
 
 The CKEditor 5 and this package are licensed under the GPL-2.0 License.
 
-.. |pypi| image:: https://img.shields.io/pypi/v/extension-text-ckeditor5
+.. |pypi| image:: https://img.shields.io/pypi/v/djangocms-text-ckeditor5
    :target: https://pypi.org/project/djangocms-text-ckeditor5/
 
 .. |djangocms| image:: https://img.shields.io/badge/django--cms-3.11+-blue
