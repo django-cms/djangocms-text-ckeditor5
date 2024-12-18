@@ -56,7 +56,7 @@ class BalloonEditor extends BalloonEditorBase {}
 
 
 // Plugins to include in the build.
-var builtinPlugins = [
+const builtinPlugins = [
 	Essentials,
 	// UploadAdapter,
 	Autoformat,
@@ -95,7 +95,6 @@ var builtinPlugins = [
 	Table,
 	TableToolbar,
 	TextTransformation,
-    // UserStyle,
     CmsPlugin
 ];
 
@@ -104,7 +103,7 @@ BalloonEditor.builtinPlugins = builtinPlugins;
 BalloonEditor.builtinPlugins.push(BlockToolbar);
 
 // Editor configuration.
-var defaultConfig = {
+const defaultConfig = {
 	toolbar: {
 		items: [
             'heading', '|',
@@ -271,12 +270,12 @@ class CmsCKEditor5Plugin {
             options.options.url_endpoint = options.url_endpoint;
         }
 
-        var blockToolbar = [];
-        var topToolbar = [];
-        var addingToBlock = false;
+        let blockToolbar = [];
+        let topToolbar = [];
+        let addingToBlock = false;
 
         const buildToolbars = (items) => {
-            for (var item of items) {
+            for (let item of items) {
                 // Transform
                 if (this._pluginNames[item] !== undefined) {
                     item = this._pluginNames[item];
@@ -288,10 +287,8 @@ class CmsCKEditor5Plugin {
                         if (blockToolbar.length > 0) {
                             blockToolbar.push('|');
                         }
-                    } else {
-                        if (topToolbar.length > 0) {
-                            topToolbar.push('|');
-                        }
+                    } else if (topToolbar.length > 0) {
+                        topToolbar.push('|');
                     }
                     buildToolbars(item);
                 } else if (inline && ['ShowBlocks', 'SourceEditing'].includes(item)) {

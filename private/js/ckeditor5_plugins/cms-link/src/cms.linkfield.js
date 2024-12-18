@@ -99,7 +99,7 @@ class LinkField {
        }
 
     showResults(response, page = 1) {
-        var currentSection;  // Keep track of the current section so that paginated data can be added
+        let currentSection;  // Keep track of the current section so that paginated data can be added
         if (page === 1) {
             // First page clears the dropdown
             this.dropdown.innerHTML = '';
