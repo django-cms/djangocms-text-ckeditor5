@@ -2,7 +2,6 @@
 /* jshint esversion: 11 */
 
 import {Plugin} from 'ckeditor5/src/core';
-import { isLinkElement } from '@ckeditor/ckeditor5-link/src/utils';
 import LinkSuggestionsEditing from './linksuggestionediting';
 import LinkField from "./cms.linkfield";
 
@@ -21,6 +20,8 @@ export default class CmsLink extends Plugin {
         editor.plugins.get('LinkUI')._createViews();
 
         this._enableLinkAutocomplete();
+        this._defineConverters();
+
         this._handleExtraFormFieldSubmit();
         this._handleDataLoadingIntoExtraFormField();
     }
@@ -68,7 +69,6 @@ export default class CmsLink extends Plugin {
 
         // Extend the link command to handle the custom attribute
         editor.commands.get('link').on('execute', (evt, data) => {
-            console.log(data);
             if (data.linkHref) {
                 const model = editor.model;
                 const selection = model.document.selection;

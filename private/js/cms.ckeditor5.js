@@ -201,7 +201,6 @@ class CmsCKEditor5Plugin {
         if (!(el.id in this._editors)) {
             const inline = el.tagName !== 'TEXTAREA';
             this._update_options(options, inline);
-            console.log(options);
             if (!inline) {
                 ClassicEditor.create(el, options.options).then( editor => {
                     this._editors[el.id] = editor;
@@ -214,7 +213,6 @@ class CmsCKEditor5Plugin {
                     editor.model.document.on('change:data', () => el.dataset.changed='true');
                     editor.ui.focusTracker.on( 'change:isFocused', ( evt, name, isFocused ) => {
                         el.classList.remove('ck-content');  // remove Ckeditor 5 default styles
-                        console.log('focus', evt, name, isFocused, el);
                         if ( !isFocused ) {
                             // change:data event is not reliable, so we need to double-check
                             if (el.dataset.changed !== 'true' && editor.getData() !== initialContent) {
@@ -276,37 +274,17 @@ class CmsCKEditor5Plugin {
 
         var blockToolbar = [];
         var topToolbar = [];
+        var addingToBlock = false;
 
         const buildToolbars = (items) => {
-            var addingToBlock = false;
-
             for (var item of items) {
-                if (item === 'Format') {
-                    // Expand "Format" widget in inline editor
-                    item = 'heading';
-                    if (inline) {
-                        blockToolbar.push('paragraph', 'heading2', 'heading3', 'heading4', 'heading5');
-                        addingToBlock = true;
-                        item = '|';
-                    }
-                } else if (inline && ['ShowBlocks', 'Source', 'sourceEditing'].includes(item)) {
-                    // No source editing or show blocks in inline editor
-                    continue;
-                } else if (this._pluginNames[item] !== undefined) {
+                // Transform
+                if (this._pluginNames[item] !== undefined) {
                     item = this._pluginNames[item];
-                } else if (this._unsupportedPlugins.includes(item)) {
-                    // Skip items with no CKEditor 5 equivalent
-                    continue;
                 }
-                if (item === '-') {
-                    continue;
-                } else if (item === '|') {
-                    if (addingToBlock) {
-                        blockToolbar.push(item);
-                    } else {
-                        topToolbar.push(item);
-                    }
-                } else if (Array.isArray(item)) {
+
+                // Add (if applicable)
+                if (Array.isArray(item)) {
                     if (addingToBlock) {
                         if (blockToolbar.length > 0) {
                             blockToolbar.push('|');
@@ -317,6 +295,26 @@ class CmsCKEditor5Plugin {
                         }
                     }
                     buildToolbars(item);
+                } else if (inline && ['ShowBlocks', 'SourceEditing'].includes(item)) {
+                    // No source editing or show blocks in inline editor
+                    continue;
+                } else if (this._unsupportedPlugins.includes(item) || item === '-') {
+                    // Skip items with no CKEditor 5 equivalent
+                    continue;
+                } else if (item === 'Format') {
+                    // Expand "Format" widget in inline editor
+                    item = 'heading';
+                    if (inline) {
+                        blockToolbar.push('paragraph', 'heading2', 'heading3', 'heading4', 'heading5');
+                        addingToBlock = true;
+                        item = '|';
+                    }
+                } else if (item === '|') {
+                    if (addingToBlock) {
+                        blockToolbar.push(item);
+                    } else {
+                        topToolbar.push(item);
+                    }
                 } else if (this._blockItems.includes(item.toLowerCase()) && inline) {
                     blockToolbar.push(item);
                     addingToBlock = true;
