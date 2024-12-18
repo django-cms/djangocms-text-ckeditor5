@@ -11,7 +11,7 @@ Features
 
 - **CKEditor5**: Look and feel of CKEditor5.
 - **Inline exiting**: CKEditor5 supports inline editing.
-- **Dynamic HTML attributes**: (not yet supported - help needed)
+- **Dynamic HTML attributes**: Supported for the Link plugin
 - **Text-enabled plugins**: (not yet supported - help needed)
 
 
@@ -19,7 +19,10 @@ Installation
 ------------
 
 Install ``djangocms-text-ckeditor5`` using pip:
-``pip install git+https://github.com/django-cms/djangocms-text-ckeditor5``.
+
+.. code-block:: bash
+
+    pip install djangocms-text-ckeditor5
 
 Build latest development branch using git:
 
@@ -34,19 +37,23 @@ Build latest development branch using git:
 You then can install the cloned repo using ``pip install -e
 /path/to/the/repo/djangocms-text-ckeditor5``.
 
-Finally, add ``djangocms_text_ckeditor5`` to your ``INSTALLED_APPS`` in your Django project
-settings:
+Finally, add ``djangocms_text_ckeditor5`` in addition to ``djangocms_text`` to
+your ``INSTALLED_APPS`` in your Django project settings:
 
 .. code-block:: python
 
-    INSTALLED_APPS = [..., "djangocms_text_ckeditor5", ...]
+    INSTALLED_APPS = [
+        ...,
+        "djangocms_text",
+        "djangocms_text_ckeditor5",
+        ...
+    ]
 
 Add an editor frontend to your installed apps (if different from the
 default TipTap frontend), and set the editor you want to use:
 
 .. code-block:: python
 
-    INSTALLED_APPS = [..., "djangocms_text_ckeditor5", ...]
     TEXT_EDITOR = "djangocms_text_ckeditor5.ckeditor5"
 
 
