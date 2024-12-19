@@ -48,8 +48,8 @@ import SourceEditing from '@ckeditor/ckeditor5-source-editing/src/sourceediting'
 import HorizontalLine from '@ckeditor/ckeditor5-horizontal-line/src/horizontalline';
 //import UserStyle from './ckeditor5-user-style/src/userstyle';
 
-import CmsPlugin from './ckeditor5_plugins/cms.plugin';
-import CmsLink from "./ckeditor5_plugins/cms-link";
+import CmsPlugin from './ckeditor5_plugins/ckeditor5-cmsplugins';
+import CmsLink from "./ckeditor5_plugins/cms.link";
 
 class ClassicEditor extends ClassicEditorBase {}
 class BalloonEditor extends BalloonEditorBase {}

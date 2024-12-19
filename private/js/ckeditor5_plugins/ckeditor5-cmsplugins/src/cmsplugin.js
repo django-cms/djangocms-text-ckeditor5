@@ -21,7 +21,7 @@ import CMSPluginEditing from "./cmspluginediting";
 
 export default class CMSPlugin extends Plugin {
     static get requires() {
-        return [ CMSPluginEditing, CMSPluginUI ];
+        return [ CMSPluginEditing ];
     }
 
     init() {
