@@ -1,5 +1,5 @@
 {
-  "name": "djangocms-text",
+  "name": "djangocms-text-ckeditor5",
   "version": "1.0.0",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -9,14 +9,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/django-cms/djangocms-text.git"
+    "url": "git+https://github.com/django-cms/djangocms-text-ckeditor5.git"
   },
   "author": "",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/django-cms/djangocms-text/issues"
+    "url": "https://github.com/django-cms/djangocms-text-ckeditor5/issues"
   },
-  "homepage": "https://github.com/django-cms/djangocms-text-rte",
+  "homepage": "https://github.com/django-cms/djangocms-text-ckeditor5",
   "devDependencies": {
     "css-loader": "^7.1.2",
     "css-minimizer-webpack-plugin": "^7.0.0",

@@ -1,4 +1,5 @@
-// placeholder/placeholdercommand.js
+/* eslint-env es11 */
+/* jshint esversion: 11 */
 
 import Command from '@ckeditor/ckeditor5-core/src/command';
 

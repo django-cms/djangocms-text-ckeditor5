@@ -2,6 +2,9 @@
  * @module userstyle/userstyle
  */
 
+/* eslint-env es11 */
+/* jshint esversion: 11 */
+
 import { Plugin } from 'ckeditor5/src/core';
 import { Collection } from 'ckeditor5/src/utils';
 import { Model, createDropdown, addListToDropdown } from 'ckeditor5/src/ui';
@@ -145,7 +148,7 @@ function getDropdownItemsDefinitions( editor ) {
             // only collect items in dropdown that do not have an own icon
             const definition = {
                 type: 'button',
-                model: new Model( {
+                model: new Modal( {
                     commandParam: plugin.value,
                     label: plugin.name,
                     withText: true
