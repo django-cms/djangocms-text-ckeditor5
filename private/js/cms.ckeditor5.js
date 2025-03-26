@@ -282,7 +282,7 @@ class CmsCKEditor5Plugin {
                 }
 
                 // Add (if applicable)
-                if (Array.isArray(item) || Array.isArray[item.items]) {
+                if (Array.isArray(item) || Array.isArray(item.items)) {
                     if (addingToBlock) {
                         if (blockToolbar.length > 0) {
                             blockToolbar.push('|');
@@ -290,7 +290,7 @@ class CmsCKEditor5Plugin {
                     } else if (topToolbar.length > 0) {
                         topToolbar.push('|');
                     }
-                    buildToolbars(Array.isArray[item] ? item : item.items);
+                    buildToolbars(Array.isArray(item) ? item : item.items);
                 } else if (inline && ['ShowBlocks', 'SourceEditing'].includes(item)) {
                     // No source editing or show blocks in inline editor
                     continue;
