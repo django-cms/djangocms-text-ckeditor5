@@ -73,4 +73,4 @@ The CKEditor 5 and this package are licensed under the GPL-2.0 License.
 .. |djangocms| image:: https://img.shields.io/badge/django--cms-3.11+-blue
    :target: https://pypi.org/project/djangocms/
 
-.. |djangocms4| image:: https://img.shields.io/badge/django--cms-4-blue
+.. |djangocms4| image:: https://img.shields.io/badge/django--cms-4%2F5-blue
