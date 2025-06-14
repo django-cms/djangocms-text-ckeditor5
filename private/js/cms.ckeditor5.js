@@ -48,8 +48,8 @@ import SourceEditing from '@ckeditor/ckeditor5-source-editing/src/sourceediting'
 import HorizontalLine from '@ckeditor/ckeditor5-horizontal-line/src/horizontalline';
 //import UserStyle from './ckeditor5-user-style/src/userstyle';
 
-import CmsPlugin from './ckeditor5_plugins/ckeditor5-cmsplugins';
-import CmsLink from "./ckeditor5_plugins/cms.link";
+import CmsPlugin from './ckeditor5_plugins/ckeditor5.cmsplugin/index';
+import CmsLink from "./ckeditor5_plugins/ckeditor5.cmslink/index";
 
 class ClassicEditor extends ClassicEditorBase {}
 class BalloonEditor extends BalloonEditorBase {}
@@ -214,7 +214,7 @@ class CmsCKEditor5Plugin {
                         if ( !isFocused ) {
                             // change:data event is not reliable, so we need to double-check
                             if (el.dataset.changed !== 'true' && editor.getData() !== initialContent) {
-                                el.dataset.changed='true';
+                                el.dataset.changed = 'true';
                             }
                             save_callback();
                         }

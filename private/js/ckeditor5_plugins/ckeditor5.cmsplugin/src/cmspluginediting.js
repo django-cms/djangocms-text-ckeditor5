@@ -73,7 +73,7 @@ export default class CMSPluginEditing extends Plugin {
                 for (const child of children) {
                     innerHTML += stringify(child);
                 }
-
+                console.log('modelWriter', modelWriter);
                 return modelWriter.createElement( schema, {
                     id: viewElement.getAttribute("id"),
                     plugin_title: viewElement.getAttribute('title') || '',

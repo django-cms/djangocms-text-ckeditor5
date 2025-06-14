@@ -32,7 +32,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries",
 ]
 dependencies = [
-    "djangocms-text",
+    "djangocms-text>=0.5",
 ]
 
 [tool.setuptools]

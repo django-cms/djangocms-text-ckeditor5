@@ -13,4 +13,4 @@ import CMSPlugin from "./src/cmsplugin";
 
 export default CMSPlugin;
 export { default as CMSPluginEditing } from './src/cmspluginediting';
-// export { default as CMSPluginUI } from './src/cmspluginui';
+export { default as CMSPluginUI } from './src/cmspluginui';
