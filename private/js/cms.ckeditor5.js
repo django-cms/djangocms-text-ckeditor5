@@ -282,7 +282,7 @@ class CmsCKEditor5Plugin {
                 }
 
                 // Add (if applicable)
-                if (Array.isArray(item)) {
+                if (Array.isArray(item) || Array.isArray(item.items)) {
                     if (addingToBlock) {
                         if (blockToolbar.length > 0) {
                             blockToolbar.push('|');
@@ -290,7 +290,7 @@ class CmsCKEditor5Plugin {
                     } else if (topToolbar.length > 0) {
                         topToolbar.push('|');
                     }
-                    buildToolbars(item);
+                    buildToolbars(Array.isArray(item) ? item : item.items);
                 } else if (inline && ['ShowBlocks', 'SourceEditing'].includes(item)) {
                     // No source editing or show blocks in inline editor
                     continue;
@@ -311,7 +311,7 @@ class CmsCKEditor5Plugin {
                     } else {
                         topToolbar.push(item);
                     }
-                } else if (this._blockItems.includes(item.toLowerCase()) && inline) {
+                } else if (typeof item === 'string' && this._blockItems.includes(item.toLowerCase()) && inline) {
                     blockToolbar.push(item);
                     addingToBlock = true;
                 } else {
