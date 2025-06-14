@@ -25,7 +25,7 @@ import BalloonPanelView from '@ckeditor/ckeditor5-ui/src/panel/balloon/balloonpa
 import toUnit from '@ckeditor/ckeditor5-utils/src/dom/tounit';
 
 import { FocusTracker, KeystrokeHandler } from 'ckeditor5/src/utils';
-import { icons } from 'ckeditor5/src/core';
+import { IconCancel, IconCheck } from '@ckeditor/ckeditor5-icons';
 
 // See: #8833.
 // eslint-disable-next-line ckeditor5-rules/ckeditor-imports
@@ -172,7 +172,7 @@ export class ModalView extends BalloonPanelView {
 		 *
 		 * @member {module:ui/button/buttonview~ButtonView}
 		 */
-		this.saveButtonView = this._createButton( t( 'Save' ), icons.check, 'ck-button-save' );
+		this.saveButtonView = this._createButton( t( 'Save' ), IconCheck, 'ck-button-save' );
 		this.saveButtonView.type = 'submit';
 
 		/**
@@ -180,7 +180,7 @@ export class ModalView extends BalloonPanelView {
 		 *
 		 * @member {module:ui/button/buttonview~ButtonView}
 		 */
-		this.cancelButtonView = this._createButton( t( 'Cancel' ), icons.cancel, 'ck-button-cancel', 'cancel' );
+		this.cancelButtonView = this._createButton( t( 'Cancel' ), IconCancel, 'ck-button-cancel', 'cancel' );
 
         this.action_bar.add( this.cancelButtonView );
         this.action_bar.add( this.saveButtonView );

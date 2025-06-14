@@ -2,7 +2,6 @@
 /* jshint esversion: 11 */
 
 import {Plugin} from 'ckeditor5/src/core';
-import LinkField from "./cms.linkfield";
 import {findAttributeRange} from "ckeditor5/src/typing";
 
 
@@ -30,6 +29,8 @@ export default class CmsLink extends Plugin {
         const editor = this.editor;
         // TRICKY: Work-around until the CKEditor team offers a better solution: force the ContextualBalloon to get instantiated early thanks to imageBlock not yet being optimized like https://github.com/ckeditor/ckeditor5/commit/c276c45a934e4ad7c2a8ccd0bd9a01f6442d4cd3#diff-1753317a1a0b947ca8b66581b533616a5309f6d4236a527b9d21ba03e13a78d8.
         editor.plugins.get('LinkUI')._createViews();
+
+        this.LinkField = window.CMS_Editor.API.LinkField;
 
         this._enableLinkAutocomplete();
         this._defineConverters();
@@ -271,7 +272,7 @@ export default class CmsLink extends Plugin {
                 );
                 // Label is misleading - remove it
                 linkFormView.urlInputView.fieldView.element.parentNode.querySelector('label')?.remove();
-                autoComplete = new LinkField(linkFormView.urlInputView.fieldView.element, {
+                autoComplete = new this.LinkField(linkFormView.urlInputView.fieldView.element, {
                     url: editor.config.get('url_endpoint') || ''
                 });
                 autoComplete.inputElement.focus();
