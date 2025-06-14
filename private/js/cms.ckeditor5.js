@@ -210,7 +210,6 @@ class CmsCKEditor5Plugin {
                     const initialContent = editor.getData();
                     editor.model.document.on('change:data', () => el.dataset.changed='true');
                     editor.ui.focusTracker.on( 'change:isFocused', ( evt, name, isFocused ) => {
-                        console.log('focusTracker', evt, name, isFocused);
                         el.classList.remove('ck-content');  // remove Ckeditor 5 default styles
                         if ( !isFocused ) {
                             // change:data event is not reliable, so we need to double-check
