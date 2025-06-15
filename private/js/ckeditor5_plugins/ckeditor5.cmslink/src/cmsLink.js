@@ -99,7 +99,7 @@ export default class CmsLink extends Plugin {
 
                 // Custom handling is only required if an extra attribute was passed into
                 // editor.execute( 'link', ... ).
-                if (args.length < 3 || args[args.length - 1] === undefined) {
+                if (args.length < 4 || args[args.length - 1] === undefined) {
                     return;
                 }
                 if (linkCommandExecuting) {
@@ -121,7 +121,7 @@ export default class CmsLink extends Plugin {
                 // Wrapping the original command execution in a model.change() block to
                 // ensure there is a single undo step when the extra attribute is added.
                 model.change((writer) => {
-                    editor.execute('link', args[0], args[1]);
+                    editor.execute('link', args[0], args[1], args[2]);
                     if (selection.isCollapsed) {
                         const firstPosition = selection.getFirstPosition();
                         const node = firstPosition.textNode || firstPosition.nodeBefore;
@@ -238,19 +238,22 @@ export default class CmsLink extends Plugin {
                 }
                 const {selection} = editor.model.document;
                 const cmsHref = selection.getAttribute('cmsHref');
-                const linkHref = selection.getAttribute('linkHref');
-                const linkLabel = newValue.element.querySelector('span.ck.ck-button__label');
-
+                const linkHref = selection.getAttribute('linkHref') || '#';
+                const linkLabel = linkToolbarView.element.querySelector('span.ck.ck-button__label');
                 if (newValue === linkToolbarView) {
                     // Patch the toolbar view to show the link target name of a cms link
                     if (linkLabel && cmsHref && editor.config.get('url_endpoint')) {
-                        linkLabel.textContent = '...';
-                        fetch(editor.config.get('url_endpoint') + '?g=' + encodeURIComponent(cmsHref))
-                        .then(response => response.json())
-                        .then(data => {
-                            linkLabel.textContent = data.text;
+                        // Find the preview button in the toolbar view (CKEditor 5 >= v40)
+                        const previewButtonView = linkToolbarView.items.find(
+                            item => item.element && item.element.classList.contains('ck-link-toolbar__preview')
+                        );
+                        if (previewButtonView) {
+                            previewButtonView.label = '...';
                             editor.ui.update();  // Update the UI to account for the new button label
-                        });
+                            this._getLinkName(editor, cmsHref, (text) => {
+                                previewButtonView.label = text;
+                            });
+                        }
                     }
                     return;
                 }
@@ -259,8 +262,7 @@ export default class CmsLink extends Plugin {
                     if (autoComplete !== null) {
                         // AutoComplete already added, just reset it, if no link exists
                         autoComplete.selectElement.value = cmsHref || '';
-                        autoComplete.urlElement.value = linkHref || '';
-                        autoComplete.inputElement.value = linkLabel.textContent || '';
+                        autoComplete.urlElement.value = linkHref;
                         autoComplete.populateField();
                         autoComplete.inputElement.focus();
                         return;
@@ -283,6 +285,17 @@ export default class CmsLink extends Plugin {
                     autoComplete.inputElement.focus();
                 }
             });
+    }
+
+    _getLinkName(editor, cmsHref, setLabel) {
+        if (cmsHref) {
+            fetch(editor.config.get('url_endpoint') + '?g=' + encodeURIComponent(cmsHref))
+            .then(response => response.json())
+            .then(data => {
+                setLabel(data.text);
+                editor.ui.update();  // Update the UI to account for the new button label
+            });
+        }
     }
 
     _handleExtraFormFieldSubmit() {
@@ -314,17 +327,16 @@ export default class CmsLink extends Plugin {
                 linkCommand.once(
                     'execute',
                     (evt, args) => {
-                        console.log('linkCommand execute once', evt, args, values);
-                        if (args.length < 3) {
+                        if (args.length < 4) {
                             args.push(values);
-                        } else if (args.length === 3) {
+                        } else if (args.length === 4) {
                             if (!args[2]) {
                                 args[2] = values;
                             } else {
                                 Object.assign(args[2], values);
                             }
                         } else {
-                            throw Error('The link command has more than 3 arguments.');
+                            throw Error('The link command has more than 4 arguments.');
                         }
                     },
                     {priority: 'highest'},

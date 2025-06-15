@@ -5,7 +5,7 @@
 
 // The editor creator to use.
 import ClassicEditorBase from '@ckeditor/ckeditor5-editor-classic/src/classiceditor';
-import BalloonEditorBase from  '@ckeditor/ckeditor5-editor-balloon/src/ballooneditor';
+import InlineEditorBase from  '@ckeditor/ckeditor5-editor-inline/src/inlineeditor';
 import BlockToolbar from '@ckeditor/ckeditor5-ui/src/toolbar/block/blocktoolbar';
 
 
@@ -53,7 +53,7 @@ import CmsPlugin from './ckeditor5_plugins/ckeditor5.cmsplugin/index';
 import CmsLink from "./ckeditor5_plugins/ckeditor5.cmslink/index";
 
 class ClassicEditor extends ClassicEditorBase {}
-class BalloonEditor extends BalloonEditorBase {}
+class InlineEditor extends InlineEditorBase {}
 
 
 // Plugins to include in the build.
@@ -102,8 +102,8 @@ const builtinPlugins = [
 ];
 
 ClassicEditor.builtinPlugins = builtinPlugins;
-BalloonEditor.builtinPlugins = builtinPlugins;
-BalloonEditor.builtinPlugins.push(BlockToolbar);
+InlineEditor.builtinPlugins = builtinPlugins;
+InlineEditor.builtinPlugins.push(BlockToolbar);
 
 // Editor configuration.
 const defaultConfig = {
@@ -159,7 +159,7 @@ const defaultConfig = {
 
 ClassicEditor.defaultConfig = Object.assign({}, defaultConfig);
 ClassicEditor.defaultConfig.toolbar.items.push('|', 'SourceEditing');
-BalloonEditor.defaultConfig = {
+InlineEditor.defaultConfig = {
     heading: defaultConfig.heading,
     table: defaultConfig.table,
     language: defaultConfig.language,
@@ -197,13 +197,14 @@ class CmsCKEditor5Plugin {
             HorizontalRule: 'horizontalLine',
             JustifyLeft: 'Alignment',
             Strike: 'Strikethrough',
+            Styles: 'Style',
         };
         this._unsupportedPlugins = [
             'Unlink', 'PasteFromWord', 'PasteText', 'Maximize',
             'JustifyCenter', 'JustifyRight', 'JustifyBlock'
         ];
         this._blockItems = [];
-        for (const item of BalloonEditor.defaultConfig.blockToolbar.items) {
+        for (const item of InlineEditor.defaultConfig.blockToolbar.items) {
             if (item !== '|') {
                 this._blockItems.push(item.toLowerCase());
             }
@@ -220,21 +221,23 @@ class CmsCKEditor5Plugin {
                     this._editors[el.id] = editor;
                 });
             } else {
-                BalloonEditor.create(el, options.options).then( editor => {
+                InlineEditor.create(el, options.options).then( editor => {
                     el.classList.remove('ck-content');  // remove Ckeditor 5 default styles
+                    editor.editing.view.change(writer => {
+                        const editableElement = editor.editing.view.document.getRoot();
+                        writer.removeClass('ck-content', editableElement);
+                    });
                     this._editors[el.id] = editor;
-                    const initialContent = editor.getData();
-                    editor.model.document.on('change:data', () => el.dataset.changed='true');
-                    editor.ui.focusTracker.on( 'change:isFocused', ( evt, name, isFocused ) => {
-                        el.classList.remove('ck-content');  // remove Ckeditor 5 default styles
-                        if ( !isFocused ) {
-                            // change:data event is not reliable, so we need to double-check
-                            if (el.dataset.changed !== 'true' && editor.getData() !== initialContent) {
-                                el.dataset.changed = 'true';
-                            }
+                    editor.isDirty = false;
+                    editor.model.document.on('change:data', () => editor.isDirty = true);
+                    editor.ui.focusTracker.on('change:isFocused', ( evt, name, isFocused ) => {
+                        if ( !isFocused && editor.isDirty) {
+                            el.dataset.changed = 'true';
                             save_callback();
+                            editor.isDirty = false;
+                            el.classList.remove('ck-content');  // remove Ckeditor 5 default styles
                         }
-                    } );
+                    });
                     const styles = document.querySelectorAll('style[data-cke="true"]');
                     if (styles.length > 0) {
                         // Styles are installed in the document head, but we need to clone them
