@@ -46,7 +46,8 @@ import TableToolbar from '@ckeditor/ckeditor5-table/src/tabletoolbar';
 import TextTransformation from '@ckeditor/ckeditor5-typing/src/texttransformation';
 import SourceEditing from '@ckeditor/ckeditor5-source-editing/src/sourceediting';
 import HorizontalLine from '@ckeditor/ckeditor5-horizontal-line/src/horizontalline';
-//import UserStyle from './ckeditor5-user-style/src/userstyle';
+import {Style} from '@ckeditor/ckeditor5-style';
+import { GeneralHtmlSupport } from '@ckeditor/ckeditor5-html-support';
 
 import CmsPlugin from './ckeditor5_plugins/ckeditor5.cmsplugin/index';
 import CmsLink from "./ckeditor5_plugins/ckeditor5.cmslink/index";
@@ -72,6 +73,7 @@ const builtinPlugins = [
     Font,
     CodeBlock,
 	BlockQuote,
+    GeneralHtmlSupport,
 	Heading,
     HeadingButtonsUI,
     HorizontalLine,
@@ -92,6 +94,7 @@ const builtinPlugins = [
     RemoveFormat,
     ShowBlocks,
 	SourceEditing,
+    Style,
 	Table,
 	TableToolbar,
 	TextTransformation,
@@ -136,6 +139,20 @@ const defaultConfig = {
 			'mergeTableCells'
 		]
 	},
+    style: {
+        definitions: [
+            {
+                name: 'Article category',
+                element: 'h3',
+                classes: [ 'category' ]
+            },
+            {
+                name: 'Lead',
+                element: 'p',
+                classes: [ 'lead' ]
+            },
+        ]
+    },
 	// This value must be kept in sync with the language defined in webpack.config.js.
 	language: 'en',
 };
@@ -152,7 +169,7 @@ BalloonEditor.defaultConfig = {
 		items: [
             'bold', 'italic', 'alignment', '|',
 			'link', '|',
-            'code', '|', // 'userstyle',
+            'code', '|',
             'fontFamily', 'fontSize', 'fontColor', '|',
 		]
 	},
@@ -162,8 +179,7 @@ BalloonEditor.defaultConfig = {
             '|',
             'alignment', '|',
             'bulletedList', 'numberedList', 'outdent', 'indent', '|',
-            // 'cms-plugin', '|',  'LinkPlugin',
-            'codeblock', '|',
+            'codeblock', '|', 'style',
             'mediaEmbed', 'insertTable', 'horizontalLine', 'blockQuote',
         ],
         shouldNotGroupWhenFull: true

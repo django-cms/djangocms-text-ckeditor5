@@ -27,7 +27,10 @@ import {findAttributeRange} from "ckeditor5/src/typing";
 export default class CmsLink extends Plugin {
     init() {
         const editor = this.editor;
-        // TRICKY: Work-around until the CKEditor team offers a better solution: force the ContextualBalloon to get instantiated early thanks to imageBlock not yet being optimized like https://github.com/ckeditor/ckeditor5/commit/c276c45a934e4ad7c2a8ccd0bd9a01f6442d4cd3#diff-1753317a1a0b947ca8b66581b533616a5309f6d4236a527b9d21ba03e13a78d8.
+        // TRICKY: Work-around until the CKEditor team offers a better solution:
+        // force the ContextualBalloon to get instantiated early thanks to imageBlock
+        // not yet being optimized like
+        // https://github.com/ckeditor/ckeditor5/commit/c276c45a934e4ad7c2a8ccd0bd9a01f6442d4cd3#diff-1753317a1a0b947ca8b66581b533616a5309f6d4236a527b9d21ba03e13a78d8.
         editor.plugins.get('LinkUI')._createViews();
 
         this.LinkField = window.CMS_Editor.API.LinkField;
@@ -92,14 +95,16 @@ export default class CmsLink extends Plugin {
         linkCommand.on(
             'execute',
             (evt, args) => {
+                console.log('linkCommand execute', evt, args, linkCommandExecuting);
+
                 // Custom handling is only required if an extra attribute was passed into
                 // editor.execute( 'link', ... ).
-                if (args.length < 3) {
+                if (args.length < 3 || args[args.length - 1] === undefined) {
                     return;
                 }
                 if (linkCommandExecuting) {
                     linkCommandExecuting = false;
-                    return;
+                    return
                 }
 
                 // If the additional attribute was passed, we stop the default execution
@@ -109,17 +114,18 @@ export default class CmsLink extends Plugin {
 
                 // Prevent infinite recursion by keeping records of when link command is
                 // being executed by this function.
-                linkCommandExecuting = true;
                 const extraAttributeValues = args[args.length - 1];
+
+                linkCommandExecuting = true;
 
                 // Wrapping the original command execution in a model.change() block to
                 // ensure there is a single undo step when the extra attribute is added.
                 model.change((writer) => {
-                    editor.execute('link', ...args);
-
-                    const firstPosition = selection.getFirstPosition();
+                    editor.execute('link', args[0], args[1]);
                     if (selection.isCollapsed) {
+                        const firstPosition = selection.getFirstPosition();
                         const node = firstPosition.textNode || firstPosition.nodeBefore;
+
                         if (extraAttributeValues['cmsHref']) {
                             writer.setAttribute(
                                 'cmsHref',
@@ -219,63 +225,63 @@ export default class CmsLink extends Plugin {
          */
         const {editor} = this;
         const linkFormView = editor.plugins.get('LinkUI').formView;
-        const linkActionsView = editor.plugins.get('LinkUI').actionsView;
+        const linkToolbarView = editor.plugins.get('LinkUI').toolbarView;
 
         let autoComplete = null;
 
         editor.plugins
             .get('ContextualBalloon')
             .on('set:visibleView', (evt, propertyName, newValue) => {
-                if (newValue !== linkFormView && newValue !== linkActionsView) {
+                if (newValue !== linkFormView && newValue !== linkToolbarView) {
                     // Only run on the two link views
                     return;
                 }
-
                 const {selection} = editor.model.document;
                 const cmsHref = selection.getAttribute('cmsHref');
                 const linkHref = selection.getAttribute('linkHref');
+                const linkLabel = newValue.element.querySelector('span.ck.ck-button__label');
 
-                if (newValue === linkActionsView) {
-                    // Add the link target name of a cms link into the action view
-                    if(cmsHref && editor.config.get('url_endpoint')) {
-                        linkActionsView.previewButtonView.label = '...';
+                if (newValue === linkToolbarView) {
+                    // Patch the toolbar view to show the link target name of a cms link
+                    if (linkLabel && cmsHref && editor.config.get('url_endpoint')) {
+                        linkLabel.textContent = '...';
                         fetch(editor.config.get('url_endpoint') + '?g=' + encodeURIComponent(cmsHref))
                         .then(response => response.json())
                         .then(data => {
-                            linkActionsView.previewButtonView.label = data.text;
+                            linkLabel.textContent = data.text;
                             editor.ui.update();  // Update the UI to account for the new button label
                         });
-                    } else if (linkHref) {
-                        // Add the link target of a regular link into the action view
-                        linkActionsView.previewButtonView.label = selection.getAttribute('linkHref');
-                        editor.ui.update();  // Update the UI to account for the new button label
                     }
                     return;
                 }
+                if (newValue === linkFormView) {
+                    // Patch the link form view to add the autocomplete functionality
+                    if (autoComplete !== null) {
+                        // AutoComplete already added, just reset it, if no link exists
+                        autoComplete.selectElement.value = cmsHref || '';
+                        autoComplete.urlElement.value = linkHref || '';
+                        autoComplete.inputElement.value = linkLabel.textContent || '';
+                        autoComplete.populateField();
+                        autoComplete.inputElement.focus();
+                        return;
+                    }
+                    const hiddenInput = document.createElement('input');
 
-                if (autoComplete !== null) {
-                    // AutoComplete already added, just reset it, if no link exists
-                    autoComplete.selectElement.value = cmsHref || '';
-                    autoComplete.urlElement.value = linkHref || '';
-                    autoComplete.inputElement.value = linkActionsView.previewButtonView.label;
-                    autoComplete.populateField();
+                    hiddenInput.setAttribute('type', 'hidden');
+                    hiddenInput.setAttribute('name', linkFormView.urlInputView.fieldView.element.id + '_select');
+                    hiddenInput.value = cmsHref || '';
+                    linkFormView.urlInputView.fieldView.element.name = linkFormView.urlInputView.fieldView.element.id;;
+                    linkFormView.urlInputView.fieldView.element.parentNode.insertBefore(
+                        hiddenInput,
+                        linkFormView.urlInputView.fieldView.element
+                    );
+                    // Label is misleading - remove it
+                    linkFormView.urlInputView.fieldView.element.parentNode.querySelector(`label[for="${linkFormView.urlInputView.fieldView.element.id}"]`)?.remove();
+                    autoComplete = new this.LinkField(linkFormView.urlInputView.fieldView.element, {
+                        url: editor.config.get('url_endpoint') || ''
+                    });
                     autoComplete.inputElement.focus();
-                    return;
                 }
-                const hiddenInput = document.createElement('input');
-                hiddenInput.setAttribute('type', 'hidden');
-                hiddenInput.setAttribute('name', linkFormView.urlInputView.fieldView.element.id + '_select');
-                hiddenInput.value = cmsHref || '';
-                linkFormView.urlInputView.fieldView.element.parentNode.insertBefore(
-                    hiddenInput,
-                    linkFormView.urlInputView.fieldView.element
-                );
-                // Label is misleading - remove it
-                linkFormView.urlInputView.fieldView.element.parentNode.querySelector('label')?.remove();
-                autoComplete = new this.LinkField(linkFormView.urlInputView.fieldView.element, {
-                    url: editor.config.get('url_endpoint') || ''
-                });
-                autoComplete.inputElement.focus();
             });
     }
 
@@ -292,7 +298,6 @@ export default class CmsLink extends Plugin {
             linkFormView,
             'submit',
             () => {
-
                 const id = linkFormView.urlInputView.fieldView.element.id + '_select';
                 const selectElement = linkFormView.urlInputView.fieldView.element.closest('form').querySelector(`input[name="${id}"]`);
                 const values = {
@@ -309,10 +314,15 @@ export default class CmsLink extends Plugin {
                 linkCommand.once(
                     'execute',
                     (evt, args) => {
+                        console.log('linkCommand execute once', evt, args, values);
                         if (args.length < 3) {
                             args.push(values);
                         } else if (args.length === 3) {
-                            Object.assign(args[2], values);
+                            if (!args[2]) {
+                                args[2] = values;
+                            } else {
+                                Object.assign(args[2], values);
+                            }
                         } else {
                             throw Error('The link command has more than 3 arguments.');
                         }
