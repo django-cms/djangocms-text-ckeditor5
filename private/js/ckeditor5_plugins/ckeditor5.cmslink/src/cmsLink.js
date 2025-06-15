@@ -238,7 +238,7 @@ export default class CmsLink extends Plugin {
                 }
                 const {selection} = editor.model.document;
                 const cmsHref = selection.getAttribute('cmsHref');
-                const linkHref = selection.getAttribute('linkHref') || '#';
+                const linkHref = selection.getAttribute('linkHref') || '';
                 const linkLabel = linkToolbarView.element.querySelector('span.ck.ck-button__label');
                 if (newValue === linkToolbarView) {
                     // Patch the toolbar view to show the link target name of a cms link
