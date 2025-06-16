@@ -191,6 +191,12 @@ export default class CmsLink extends Plugin {
             .then(data => {
                 setLabel(data.text);
                 editor.ui.update();  // Update the UI to account for the new button label
+            })
+            .catch(error => {
+                console.error('Failed to fetch link name:', error);
+                // Optionally, set a fallback label or notify the user
+                setLabel('Link');
+                editor.ui.update();
             });
         }
     }
