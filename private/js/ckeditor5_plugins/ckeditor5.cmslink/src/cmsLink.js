@@ -26,7 +26,7 @@ import {findAttributeRange} from "ckeditor5/src/typing";
 
 export default class CmsLink extends Plugin {
     init() {
-        const editor = this.editor;
+        const {editor} = this;
         // TRICKY: Work-around until the CKEditor team offers a better solution:
         // force the ContextualBalloon to get instantiated early thanks to imageBlock
         // not yet being optimized like
