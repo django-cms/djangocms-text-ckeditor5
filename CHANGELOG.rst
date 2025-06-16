@@ -5,6 +5,7 @@ Changelog
 0.2.5 (2025-06-14)
 ==================
 * feat: Add support to view text-enabled plugins
+* feat: Add support for CKEditor style plugin
 
 0.2.0 (2024-12-12)
 ==================
