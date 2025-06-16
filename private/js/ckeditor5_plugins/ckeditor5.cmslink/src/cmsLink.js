@@ -61,17 +61,17 @@ export default class CmsLink extends Plugin {
         // DOWNCAST: From model to view (HTML)
         editor.conversion.for('dataDowncast').attributeToElement({
             model: 'linkHref',
-            view: this.createLinkElement,
+            view: this.createLinkElement.bind(this),
             converterPriority: 'high',
         });
         editor.conversion.for('editingDowncast')
             .attributeToElement({
                 model: 'linkHref',
-                view: (href, conversionApi) => {
-                    if (href) {
-                        href.href = ensureSafeUrl(href.href, allowedProtocols);
+                view: (value, conversionApi) => {
+                    if (value) {
+                        value.href = ensureSafeUrl(value.href, allowedProtocols);
                     }
-                    return this.createLinkElement(href, conversionApi);
+                    return this.createLinkElement(value, conversionApi);
                 },
                 converterPriority: 'high',
             });
@@ -131,7 +131,7 @@ export default class CmsLink extends Plugin {
         const linkFormView = editor.plugins.get('LinkUI').formView;
         const linkToolbarView = editor.plugins.get('LinkUI').toolbarView;
 
-        let autoComplete = null;
+        this.autoComplete = null;
 
         editor.plugins
             .get('ContextualBalloon')
@@ -167,12 +167,12 @@ export default class CmsLink extends Plugin {
                 }
                 if (newValue === linkFormView) {
                     // Patch the link form view to add the autocomplete functionality
-                    if (autoComplete !== null) {
+                    if (this.autoComplete !== null) {
                         // AutoComplete already added, just reset it, if no link exists
-                        autoComplete.selectElement.value = linkHref.cmsHref || '';
-                        autoComplete.urlElement.value = linkHref.href || '';
-                        autoComplete.populateField();
-                        autoComplete.inputElement.focus();
+                        this.autoComplete.selectElement.value = linkHref.cmsHref || '';
+                        this.autoComplete.urlElement.value = linkHref.href || '';
+                        this.autoComplete.populateField();
+                        this.autoComplete.inputElement.focus();
                         return;
                     }
                     const hiddenInput = document.createElement('input');
@@ -180,17 +180,18 @@ export default class CmsLink extends Plugin {
                     hiddenInput.setAttribute('type', 'hidden');
                     hiddenInput.setAttribute('name', linkFormView.urlInputView.fieldView.element.id + '_select');
                     hiddenInput.value = linkHref.cmsHref || '';
-                    linkFormView.urlInputView.fieldView.element.name = linkFormView.urlInputView.fieldView.element.id;;
+                    linkFormView.urlInputView.fieldView.element.name = linkFormView.urlInputView.fieldView.element.id;
+                    linkFormView.urlInputView.fieldView.element.value = linkHref.href || '';
                     linkFormView.urlInputView.fieldView.element.parentNode.insertBefore(
                         hiddenInput,
                         linkFormView.urlInputView.fieldView.element
                     );
                     // Label is misleading - remove it
                     linkFormView.urlInputView.fieldView.element.parentNode.querySelector(`label[for="${linkFormView.urlInputView.fieldView.element.id}"]`)?.remove();
-                    autoComplete = new this.LinkField(linkFormView.urlInputView.fieldView.element, {
+                    this.autoComplete = new this.LinkField(linkFormView.urlInputView.fieldView.element, {
                         url: editor.config.get('url_endpoint') || ''
                     });
-                    autoComplete.inputElement.focus();
+                    this.autoComplete.inputElement.focus();
                 }
             });
     }
@@ -219,34 +220,27 @@ export default class CmsLink extends Plugin {
          */
         const {editor} = this;
         const linkFormView = editor.plugins.get('LinkUI').formView;
-        const linkCommand = editor.commands.get('link');
 
         this.listenTo(
             linkFormView,
             'submit',
-            (ev) => {
-                const id = linkFormView.urlInputView.fieldView.element.id + '_select';
-                const selectElement = linkFormView.urlInputView.fieldView.element.closest('form').querySelector(`input[name="${id}"]`);
-                // Stop the execution of the link command caused by closing the form.
-                // Inject the extra attribute value. The highest priority listener here
-                // injects the argument (here below 👇).
-                // - The high priority listener in
-                //   _addExtraAttributeOnLinkCommandExecute() gets that argument and sets
-                //   the extra attribute.
-                // - The normal (default) priority listener in ckeditor5-link sets
-                //   (creates) the actual link.
-                linkCommand.once(
-                    'execute',
-                    (evt, args) => {
-                        if (args.length > 0) {
-                            args[0] = {href: args[0]};
-                            if (selectElement.value) {
-                                args[0].cmsHref = selectElement.value;
-                            }
-                        }
-                    },
-                    {priority: 'highest'},
-                );
+            (event) => {
+                if (linkFormView.isValid()) {
+                    const attrs = {};
+                    const id = linkFormView.urlInputView.fieldView.element.id + '_select';
+                    const selectElement = linkFormView.urlInputView.fieldView.element.closest('form').querySelector(`input[name="${id}"]`);
+                    if (selectElement?.value) {
+                        attrs.href = linkFormView.urlInputView.fieldView.element.value;
+                        attrs.cmsHref = selectElement.value;
+                    } else {
+                        const url = this.autoComplete?.inputElement?.value || linkFormView.urlInputView.fieldView.element.value;
+                        attrs.href = addLinkProtocolIfApplicable(url, defaultProtocol);
+                    }
+                    const displayedText = formView.displayedTextInputView.fieldView.element.value;
+                    editor.execute('link', attrs, this._getDecoratorSwitchesState(), displayedText !== this.selectedLinkableText ? displayedText : undefined);
+                    this._closeFormView();
+                }
+                event.stop();
             },
             {priority: 'high'},
         );
