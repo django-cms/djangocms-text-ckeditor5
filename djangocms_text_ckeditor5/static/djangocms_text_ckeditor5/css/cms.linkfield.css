@@ -2,6 +2,7 @@
     .cms-linkfield-wrapper {
         font-size: 0.8rem;
         position: relative;
+        width: 100%;
         input[type="text"] {
             padding-inline-end: 2em;
             background: var(--dca-white, white) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="16" fill="%23808080" viewBox="0 0 16 16"><path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/></svg>') no-repeat right center;
@@ -13,13 +14,16 @@
         .cms-linkfield-selected {
             font-weight: bold;
         }
-        .cms-linkfield-dropdown:not(:empty), .cms-linkfield-dropdown:active {
-            /* Hide dropdown when empty */
-            visibility: visible;
-        }
         .cms-linkfield-dropdown {
             z-index: 1;
             visibility: hidden;
+            &.open, &:active {
+                visibility: visible;
+                &:empty {
+                    /* Hide dropdown when empty */
+                    visibility: hidden;
+                }
+            }
             position: absolute;
             max-block-size: 200px;
             overflow: auto;

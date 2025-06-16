@@ -2,7 +2,7 @@
 /* jshint esversion: 11 */
 
 import {Plugin} from 'ckeditor5/src/core';
-import {findAttributeRange} from "ckeditor5/src/typing";
+import {ensureSafeUrl} from "@ckeditor/ckeditor5-link/src/utils";
 
 
 /**
@@ -26,8 +26,11 @@ import {findAttributeRange} from "ckeditor5/src/typing";
 
 export default class CmsLink extends Plugin {
     init() {
-        const editor = this.editor;
-        // TRICKY: Work-around until the CKEditor team offers a better solution: force the ContextualBalloon to get instantiated early thanks to imageBlock not yet being optimized like https://github.com/ckeditor/ckeditor5/commit/c276c45a934e4ad7c2a8ccd0bd9a01f6442d4cd3#diff-1753317a1a0b947ca8b66581b533616a5309f6d4236a527b9d21ba03e13a78d8.
+        const {editor} = this;
+        // TRICKY: Work-around until the CKEditor team offers a better solution:
+        // force the ContextualBalloon to get instantiated early thanks to imageBlock
+        // not yet being optimized like
+        // https://github.com/ckeditor/ckeditor5/commit/c276c45a934e4ad7c2a8ccd0bd9a01f6442d4cd3#diff-1753317a1a0b947ca8b66581b533616a5309f6d4236a527b9d21ba03e13a78d8.
         editor.plugins.get('LinkUI')._createViews();
 
         this.LinkField = window.CMS_Editor.API.LinkField;
@@ -37,41 +40,66 @@ export default class CmsLink extends Plugin {
 
         this._handleExtraAttributeValues();
         this._handleExtraFormFieldSubmit();
-        this._handleDataLoadingIntoExtraFormField();
+    }
+
+    createLinkElement(value, { writer }) {
+        // Priority 5 - https://github.com/ckeditor/ckeditor5-link/issues/121.
+        const attrs = { href: value?.href };
+        if (value?.cmsHref) {
+            attrs['data-cms-href'] = value.cmsHref;
+        }
+
+        const linkElement = writer.createAttributeElement('a', attrs, { priority: 5 });
+        writer.setCustomProperty('link', true, linkElement);
+        return linkElement;
     }
 
     _defineConverters() {
-       const {editor} = this;
-        editor.model.schema.extend('$text', {allowAttributes: 'cmsHref'});
+        const {editor} = this;
+        const allowedProtocols = editor.config.get('link.allowedProtocols');
 
         // DOWNCAST: From model to view (HTML)
-        editor.conversion.for('downcast').attributeToElement({
-            model: 'cmsHref',
-            view: (value, {writer}) => {
-                const linkViewElement = writer.createAttributeElement(
-                    'a', {'data-cms-href': value}, {priority: 5},
-                );
-
-                // Without it the isLinkElement() will not recognize the link and the UI will not show up
-                // when the user clicks a link.
-                writer.setCustomProperty('link', true, linkViewElement);
-
-                return linkViewElement;
-            },
+        editor.conversion.for('dataDowncast').attributeToElement({
+            model: 'linkHref',
+            view: this.createLinkElement,
+            converterPriority: 'high',
         });
+        editor.conversion.for('editingDowncast')
+            .attributeToElement({
+                model: 'linkHref',
+                view: (href, conversionApi) => {
+                    if (href) {
+                        href.href = ensureSafeUrl(href.href, allowedProtocols);
+                    }
+                    return this.createLinkElement(href, conversionApi);
+                },
+                converterPriority: 'high',
+            });
 
         // UPCAST: From view (HTML) to the model
         editor.conversion.for('upcast').elementToAttribute({
             view: {
                 name: 'a',
                 attributes: {
-                    'data-cms-href': true
+                    'href': true,
                 },
             },
             model: {
-                key: 'cmsHref',
-                value: (viewElement) => viewElement.getAttribute('data-cms-href'),
+                key: 'linkHref',
+                value: (viewElement) => {
+                    /*
+                     * This function extracts the link href and the custom cmsHref attribute from the view element.
+                     * It returns an object with both attributes.
+                     */
+                    const href = viewElement.getAttribute('href');
+                    const cmsHref = viewElement.getAttribute('data-cms-href');
+                    if (cmsHref) {
+                        return {href: href, cmsHref: cmsHref};
+                    }
+                    return {href: href};
+                },
             },
+            converterPriority: 'high',
         });
     }
 
@@ -82,131 +110,13 @@ export default class CmsLink extends Plugin {
          */
         const {editor} = this;
         const linkCommand = editor.commands.get('link');
-        const unlinkCommand = editor.commands.get('unlink');
-        const {model} = editor;
-        const {selection} = model.document;
-
-        // Add the extra attributes with the link command
-        let linkCommandExecuting = false;
 
         linkCommand.on(
             'execute',
             (evt, args) => {
-                // Custom handling is only required if an extra attribute was passed into
-                // editor.execute( 'link', ... ).
-                if (args.length < 3) {
-                    return;
+                if (args.length > 0 && typeof args[0] === 'string') {
+                    args[0] = { href: args[0] };
                 }
-                if (linkCommandExecuting) {
-                    linkCommandExecuting = false;
-                    return;
-                }
-
-                // If the additional attribute was passed, we stop the default execution
-                // of the LinkCommand. We're going to create Model#change() block for undo
-                // and execute the LinkCommand together with setting the extra attribute.
-                evt.stop();
-
-                // Prevent infinite recursion by keeping records of when link command is
-                // being executed by this function.
-                linkCommandExecuting = true;
-                const extraAttributeValues = args[args.length - 1];
-
-                // Wrapping the original command execution in a model.change() block to
-                // ensure there is a single undo step when the extra attribute is added.
-                model.change((writer) => {
-                    editor.execute('link', ...args);
-
-                    const firstPosition = selection.getFirstPosition();
-                    if (selection.isCollapsed) {
-                        const node = firstPosition.textNode || firstPosition.nodeBefore;
-                        if (extraAttributeValues['cmsHref']) {
-                            writer.setAttribute(
-                                'cmsHref',
-                                extraAttributeValues['cmsHref'],
-                                writer.createRangeOn(node),
-                            );
-                        } else {
-                            writer.removeAttribute('cmsHref', writer.createRangeOn(node));
-                        }
-
-                        writer.removeSelectionAttribute('cmsHref');
-                    } else {
-                        const ranges = model.schema.getValidRanges(
-                            selection.getRanges(),
-                            'cmsHref',
-                        );
-
-                        // eslint-disable-next-line no-restricted-syntax
-                        for (const range of ranges) {
-                            if (extraAttributeValues['cmsHref']) {
-                                writer.setAttribute(
-                                    'cmsHref',
-                                    extraAttributeValues['cmsHref'],
-                                    range,
-                                );
-                            } else {
-                                writer.removeAttribute('cmsHref', range);
-                            }
-                        }
-                    }
-                 });
-            },
-            {priority: 'high'},
-        );
-
-        // Remove extra attributes when the unlink command is executed.
-        let isUnlinkingInProgress = false;
-
-        // Make sure all changes are in a single undo step so cancel the original unlink first in the high priority.
-        unlinkCommand.on(
-            'execute',
-            (evt) => {
-                if (isUnlinkingInProgress) {
-                    return;
-                }
-
-                evt.stop();
-
-                // This single block wraps all changes that should be in a single undo step.
-                model.change(() => {
-                    // Now, in this single "undo block" let the unlink command flow naturally.
-                    isUnlinkingInProgress = true;
-
-                    // Do the unlinking within a single undo step.
-                    editor.execute('unlink');
-
-                    // Let's make sure the next unlinking will also be handled.
-                    isUnlinkingInProgress = false;
-
-                    // The actual integration that removes the extra attribute.
-                    model.change((writer) => {
-                        // Get ranges to unlink.
-                        let ranges;
-
-                        if (selection.isCollapsed) {
-                            ranges = [
-                                findAttributeRange(
-                                    selection.getFirstPosition(),
-                                    'cmsHref',
-                                    selection.getAttribute('cmsHref'),
-                                    model,
-                                ),
-                            ];
-                        } else {
-                            ranges = model.schema.getValidRanges(
-                                selection.getRanges(),
-                                'cmsHref',
-                            );
-                        }
-
-                        // Remove the extra attribute from specified ranges.
-                        // eslint-disable-next-line no-restricted-syntax
-                        for (const range of ranges) {
-                            writer.removeAttribute('cmsHref', range);
-                        }
-                    });
-                });
             },
             {priority: 'high'},
         );
@@ -219,64 +129,87 @@ export default class CmsLink extends Plugin {
          */
         const {editor} = this;
         const linkFormView = editor.plugins.get('LinkUI').formView;
-        const linkActionsView = editor.plugins.get('LinkUI').actionsView;
+        const linkToolbarView = editor.plugins.get('LinkUI').toolbarView;
 
         let autoComplete = null;
 
         editor.plugins
             .get('ContextualBalloon')
             .on('set:visibleView', (evt, propertyName, newValue) => {
-                if (newValue !== linkFormView && newValue !== linkActionsView) {
+                if (newValue !== linkFormView && newValue !== linkToolbarView) {
                     // Only run on the two link views
                     return;
                 }
-
                 const {selection} = editor.model.document;
-                const cmsHref = selection.getAttribute('cmsHref');
-                const linkHref = selection.getAttribute('linkHref');
+                const linkHref = selection.getAttribute('linkHref') || {};
+                const linkLabel = linkToolbarView.element.querySelector('span.ck.ck-button__label');
 
-                if (newValue === linkActionsView) {
-                    // Add the link target name of a cms link into the action view
-                    if(cmsHref && editor.config.get('url_endpoint')) {
-                        linkActionsView.previewButtonView.label = '...';
-                        fetch(editor.config.get('url_endpoint') + '?g=' + encodeURIComponent(cmsHref))
-                        .then(response => response.json())
-                        .then(data => {
-                            linkActionsView.previewButtonView.label = data.text;
+                if (newValue === linkToolbarView && linkLabel) {
+                    // Patch the toolbar view to show the link target name of a cms link
+                    const previewButtonView = linkToolbarView.items.find(
+                        item => item.element && item.element.classList.contains('ck-link-toolbar__preview')
+                    );
+                    if (linkHref.cmsHref && editor.config.get('url_endpoint')) {
+                        // Find the preview button in the toolbar view (CKEditor 5 >= v40)
+                        if (previewButtonView) {
+                            previewButtonView.label = '...';
                             editor.ui.update();  // Update the UI to account for the new button label
-                        });
-                    } else if (linkHref) {
-                        // Add the link target of a regular link into the action view
-                        linkActionsView.previewButtonView.label = selection.getAttribute('linkHref');
-                        editor.ui.update();  // Update the UI to account for the new button label
+                            this._getLinkName(editor, linkHref.cmsHref, (text) => {
+                                previewButtonView.label = text;
+                                previewButtonView.href = linkHref.href || null;
+                            });
+                        }
+                    } else if (previewButtonView) {
+                        previewButtonView.label = linkHref.href || '';
+                        previewButtonView.href = linkHref.href || '';
                     }
                     return;
                 }
+                if (newValue === linkFormView) {
+                    // Patch the link form view to add the autocomplete functionality
+                    if (autoComplete !== null) {
+                        // AutoComplete already added, just reset it, if no link exists
+                        autoComplete.selectElement.value = linkHref.cmsHref || '';
+                        autoComplete.urlElement.value = linkHref.href || '';
+                        autoComplete.populateField();
+                        autoComplete.inputElement.focus();
+                        return;
+                    }
+                    const hiddenInput = document.createElement('input');
 
-                if (autoComplete !== null) {
-                    // AutoComplete already added, just reset it, if no link exists
-                    autoComplete.selectElement.value = cmsHref || '';
-                    autoComplete.urlElement.value = linkHref || '';
-                    autoComplete.inputElement.value = linkActionsView.previewButtonView.label;
-                    autoComplete.populateField();
+                    hiddenInput.setAttribute('type', 'hidden');
+                    hiddenInput.setAttribute('name', linkFormView.urlInputView.fieldView.element.id + '_select');
+                    hiddenInput.value = linkHref.cmsHref || '';
+                    linkFormView.urlInputView.fieldView.element.name = linkFormView.urlInputView.fieldView.element.id;;
+                    linkFormView.urlInputView.fieldView.element.parentNode.insertBefore(
+                        hiddenInput,
+                        linkFormView.urlInputView.fieldView.element
+                    );
+                    // Label is misleading - remove it
+                    linkFormView.urlInputView.fieldView.element.parentNode.querySelector(`label[for="${linkFormView.urlInputView.fieldView.element.id}"]`)?.remove();
+                    autoComplete = new this.LinkField(linkFormView.urlInputView.fieldView.element, {
+                        url: editor.config.get('url_endpoint') || ''
+                    });
                     autoComplete.inputElement.focus();
-                    return;
                 }
-                const hiddenInput = document.createElement('input');
-                hiddenInput.setAttribute('type', 'hidden');
-                hiddenInput.setAttribute('name', linkFormView.urlInputView.fieldView.element.id + '_select');
-                hiddenInput.value = cmsHref || '';
-                linkFormView.urlInputView.fieldView.element.parentNode.insertBefore(
-                    hiddenInput,
-                    linkFormView.urlInputView.fieldView.element
-                );
-                // Label is misleading - remove it
-                linkFormView.urlInputView.fieldView.element.parentNode.querySelector('label')?.remove();
-                autoComplete = new this.LinkField(linkFormView.urlInputView.fieldView.element, {
-                    url: editor.config.get('url_endpoint') || ''
-                });
-                autoComplete.inputElement.focus();
             });
+    }
+
+    _getLinkName(editor, cmsHref, setLabel) {
+        if (cmsHref) {
+            fetch(editor.config.get('url_endpoint') + '?g=' + encodeURIComponent(cmsHref))
+            .then(response => response.json())
+            .then(data => {
+                setLabel(data.text);
+                editor.ui.update();  // Update the UI to account for the new button label
+            })
+            .catch(error => {
+                console.error('Failed to fetch link name:', error);
+                // Optionally, set a fallback label or notify the user
+                setLabel('Link');
+                editor.ui.update();
+            });
+        }
     }
 
     _handleExtraFormFieldSubmit() {
@@ -291,13 +224,9 @@ export default class CmsLink extends Plugin {
         this.listenTo(
             linkFormView,
             'submit',
-            () => {
-
+            (ev) => {
                 const id = linkFormView.urlInputView.fieldView.element.id + '_select';
                 const selectElement = linkFormView.urlInputView.fieldView.element.closest('form').querySelector(`input[name="${id}"]`);
-                const values = {
-                    'cmsHref': selectElement.value,
-                };
                 // Stop the execution of the link command caused by closing the form.
                 // Inject the extra attribute value. The highest priority listener here
                 // injects the argument (here below 👇).
@@ -309,12 +238,11 @@ export default class CmsLink extends Plugin {
                 linkCommand.once(
                     'execute',
                     (evt, args) => {
-                        if (args.length < 3) {
-                            args.push(values);
-                        } else if (args.length === 3) {
-                            Object.assign(args[2], values);
-                        } else {
-                            throw Error('The link command has more than 3 arguments.');
+                        if (args.length > 0) {
+                            args[0] = {href: args[0]};
+                            if (selectElement.value) {
+                                args[0].cmsHref = selectElement.value;
+                            }
                         }
                     },
                     {priority: 'highest'},
@@ -322,31 +250,6 @@ export default class CmsLink extends Plugin {
             },
             {priority: 'high'},
         );
-    }
-
-    _handleDataLoadingIntoExtraFormField() {
-        /*
-         * This method listens to the link command and updates the extra attribute values
-         */
-        const {editor} = this;
-        const linkCommand = editor.commands.get('link');
-
-        this.bind('cmsHref').to(linkCommand, 'cmsHref');
-    }
-
-   _refreshExtraAttributeValues() {
-        /*
-         * This method listens to document changes to update the cmsHref attribute. Currently not called.
-         */
-        const {editor} = this;
-        const linkCommand = editor.commands.get('link');
-        const {model} = editor;
-        const {selection} = model.document;
-
-        linkCommand.set('cmsHref', null);
-        model.document.on('change', () => {
-            linkCommand['cmsHref'] = selection.getAttribute('cmsHref');
-        });
     }
 
     /**
