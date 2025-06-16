@@ -2,7 +2,7 @@
 /* jshint esversion: 11 */
 
 import {Plugin} from 'ckeditor5/src/core';
-import {findAttributeRange} from "ckeditor5/src/typing";
+import {ensureSafeUrl} from "@ckeditor/ckeditor5-link/src/utils";
 
 
 /**
@@ -55,14 +55,26 @@ export default class CmsLink extends Plugin {
     }
 
     _defineConverters() {
-       const {editor} = this;
+        const {editor} = this;
+        const allowedProtocols = editor.config.get('link.allowedProtocols');
 
         // DOWNCAST: From model to view (HTML)
-        editor.conversion.for('downcast').attributeToElement({
+        editor.conversion.for('dataDowncast').attributeToElement({
             model: 'linkHref',
             view: this.createLinkElement,
             converterPriority: 'high',
         });
+        editor.conversion.for('editingDowncast')
+            .attributeToElement({
+                model: 'linkHref',
+                view: (href, conversionApi) => {
+                    if (href) {
+                        href.href = ensureSafeUrl(href.href, allowedProtocols);
+                    }
+                    return this.createLinkElement(href, conversionApi);
+                },
+                converterPriority: 'high',
+            });
 
         // UPCAST: From view (HTML) to the model
         editor.conversion.for('upcast').elementToAttribute({
@@ -84,7 +96,7 @@ export default class CmsLink extends Plugin {
                     if (cmsHref) {
                         return {href: href, cmsHref: cmsHref};
                     }
-                    return {href: href || '#'};
+                    return {href: href};
                 },
             },
             converterPriority: 'high',
@@ -102,7 +114,7 @@ export default class CmsLink extends Plugin {
         linkCommand.on(
             'execute',
             (evt, args) => {
-                if (args.length > 0 && args[0] && typeof args[0] === 'object') {
+                if (args.length > 0 && typeof args[0] === 'string') {
                     args[0] = { href: args[0] };
                 }
             },
@@ -131,6 +143,7 @@ export default class CmsLink extends Plugin {
                 const {selection} = editor.model.document;
                 const linkHref = selection.getAttribute('linkHref') || {};
                 const linkLabel = linkToolbarView.element.querySelector('span.ck.ck-button__label');
+
                 if (newValue === linkToolbarView && linkLabel) {
                     // Patch the toolbar view to show the link target name of a cms link
                     const previewButtonView = linkToolbarView.items.find(
@@ -146,7 +159,7 @@ export default class CmsLink extends Plugin {
                                 previewButtonView.href = linkHref.href || null;
                             });
                         }
-                    } else {
+                    } else if (previewButtonView) {
                         previewButtonView.label = linkHref.href || '';
                         previewButtonView.href = linkHref.href || '';
                     }
