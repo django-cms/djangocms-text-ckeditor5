@@ -235,7 +235,6 @@ export default class CmsLink extends Plugin {
         );
     }
 
-
     /**
      * @inheritdoc
      */
