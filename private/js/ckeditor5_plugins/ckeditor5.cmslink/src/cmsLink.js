@@ -44,12 +44,12 @@ export default class CmsLink extends Plugin {
 
     createLinkElement(value, { writer }) {
         // Priority 5 - https://github.com/ckeditor/ckeditor5-link/issues/121.
-    const attrs = { href: value?.href };
-    if (value?.cmsHref) {
-        attrs['data-cms-href'] = value.cmsHref;
-    }
+        const attrs = { href: value?.href };
+        if (value?.cmsHref) {
+            attrs['data-cms-href'] = value.cmsHref;
+        }
 
-    const linkElement = writer.createAttributeElement('a', attrs, { priority: 5 });
+        const linkElement = writer.createAttributeElement('a', attrs, { priority: 5 });
         writer.setCustomProperty('link', true, linkElement);
         return linkElement;
     }
@@ -102,10 +102,8 @@ export default class CmsLink extends Plugin {
         linkCommand.on(
             'execute',
             (evt, args) => {
-                if (args.length > 0) {
-                    if (typeof args[0] === 'string') {
-                        args[0] = { href: args[0] };
-                    }
+                if (args.length > 0 && args[0] && typeof args[0] === 'object') {
+                    args[0] = { href: args[0] };
                 }
             },
             {priority: 'high'},
