@@ -236,9 +236,9 @@ export default class CmsLink extends Plugin {
                         const url = this.autoComplete?.inputElement?.value || linkFormView.urlInputView.fieldView.element.value;
                         attrs.href = addLinkProtocolIfApplicable(url, defaultProtocol);
                     }
-                    const displayedText = formView.displayedTextInputView.fieldView.element.value;
-                    editor.execute('link', attrs, this._getDecoratorSwitchesState(), displayedText !== this.selectedLinkableText ? displayedText : undefined);
-                    this._closeFormView();
+                    const displayedText = linkFormView.displayedTextInputView.fieldView.element.value;
+                    editor.execute('link', attrs, editor.plugins.get('LinkUI')._getDecoratorSwitchesState(), displayedText !== this.selectedLinkableText ? displayedText : undefined);
+                    editor.plugins.get('LinkUI')._closeFormView();
                 }
                 event.stop();
             },

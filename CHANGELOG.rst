@@ -2,6 +2,10 @@
 Changelog
 =========
 
+0.2.6 (2025-06-17)
+==================
+* fix: Link dialog raised JS exception when saving
+
 0.2.5 (2025-06-14)
 ==================
 * feat: Add support to view text-enabled plugins
