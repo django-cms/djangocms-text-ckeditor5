@@ -250,9 +250,10 @@ export default class CmsLink extends Plugin {
                         // node and falls back to the `href` argument as the text body
                         // when no displayedText is given. Our `href` is an object
                         // ({href, cmsHref}), which would stringify to "[object Object]".
-                        // Pass the URL string explicitly so the inserted text reads as
-                        // the URL.
-                        displayedText = attrs.href;
+                        // Pass a URL-ish string explicitly so the inserted text reads
+                        // as something useful — prefer the resolved URL, fall back to
+                        // the cmsHref token when only that is set (CMS-link path).
+                        displayedText = attrs.href || attrs.cmsHref;
                     }
                     editor.execute('link', attrs, editor.plugins.get('LinkUI')._getDecoratorSwitchesState(), displayedText);
                     editor.plugins.get('LinkUI')._closeFormView();

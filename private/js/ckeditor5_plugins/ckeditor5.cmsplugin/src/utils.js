@@ -88,12 +88,19 @@ export function rangeItemsToText(items) {
  * @returns {{schema:'cms-inline-plugin'|'cms-block-plugin', attrs:object}|null}
  */
 export function parsePluginMarkup(markup) {
-    if (typeof document === 'undefined') {
+    if (typeof DOMParser === 'undefined') {
         return null;
     }
-    const ghost = document.createElement('div');
-    ghost.innerHTML = markup || '<cms-plugin></cms-plugin>';
-    const cmsPluginEl = ghost.firstElementChild;
+    // Parse via DOMParser instead of `innerHTML =` so the markup never enters a
+    // live document tree. The source is the trusted Django admin endpoint
+    // (`window.CMS_Editor.requestPluginMarkup`), but DOMParser is also free of
+    // the side effects (script execution, resource fetching) that innerHTML on
+    // a live element can trigger, and satisfies static analyzers.
+    const doc = new DOMParser().parseFromString(
+        markup || '<cms-plugin></cms-plugin>',
+        'text/html',
+    );
+    const cmsPluginEl = doc.body.firstElementChild;
     if (!cmsPluginEl) {
         return null;
     }

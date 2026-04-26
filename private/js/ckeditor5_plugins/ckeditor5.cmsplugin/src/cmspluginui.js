@@ -201,12 +201,15 @@ function updatePluginAttrs(editor, modelElement, markup) {
     }
     if (parsed.schema !== modelElement.name) {
         // The plugin changed its inline/block nature on edit. Replace in place
-        // by deleting the old element and inserting the new one at the same position.
+        // by deleting the old element and inserting the new one at the same
+        // position. Capture the position BEFORE the removal — once the element
+        // is gone, a range/position derived from it can be invalidated by
+        // CKE5's live-position bookkeeping (e.g. under collaboration / undo).
         editor.model.change(writer => {
+            const insertPos = writer.createPositionBefore(modelElement);
             const newEl = writer.createElement(parsed.schema, parsed.attrs);
-            const range = writer.createRangeOn(modelElement);
-            writer.remove(range);
-            editor.model.insertContent(newEl, range.start);
+            writer.remove(modelElement);
+            editor.model.insertContent(newEl, insertPos);
             writer.setSelection(newEl, 'on');
         });
         return;
