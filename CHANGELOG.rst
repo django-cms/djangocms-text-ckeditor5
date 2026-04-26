@@ -4,7 +4,7 @@ Changelog
 
 0.48.0 (2026-04-26)
 
-* feat: Add full support of text-enabled CMS plugins
+* feat: Add full support for text-enabled CMS plugins
 * chore: Switch versioning to x.<ckeditor-version>.y
 
 0.2.6 (2025-06-17)
