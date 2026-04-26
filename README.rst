@@ -9,10 +9,13 @@ a rich text editor to djangocms-text.
 Features
 --------
 
-- **CKEditor5**: Look and feel of CKEditor5.
-- **Inline exiting**: CKEditor5 supports inline editing.
-- **Dynamic HTML attributes**: Supported for the Link plugin
-- **Text-enabled plugins**: (not yet supported - help needed)
+- **CKEditor 5**: Look and feel of CKEditor 5.
+- **Inline editing**: CKEditor 5 supports inline editing.
+- **Dynamic HTML attributes**: Supported for the Link plugin.
+- **CMS plugin embedding**: Add CMS plugins from the editor toolbar
+  ("CMS Plugins" dropdown, plus optional dedicated buttons for plugins
+  with their own icon) and double-click an embedded plugin to edit it
+  in place.
 
 
 Installation
@@ -32,7 +35,8 @@ Build latest development branch using git:
     cd djangocms-text-ckeditor5
     nvm use
     npm install
-    npx webpack --mode development
+    npm run build:dev          # or `npm run build` for a production bundle
+    npm test                   # Node's built-in test runner
 
 You then can install the cloned repo using ``pip install -e
 /path/to/the/repo/djangocms-text-ckeditor5``.

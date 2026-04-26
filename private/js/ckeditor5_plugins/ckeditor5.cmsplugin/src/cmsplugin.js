@@ -2,29 +2,18 @@
  * @module userstyle/userstyle
  */
 
-import { Plugin } from 'ckeditor5/src/core';
+import { Plugin } from '@ckeditor/ckeditor5-core';
 
 import CMSPluginUI from "./cmspluginui";
 import CMSPluginEditing from "./cmspluginediting";
 
 
 /**
- * The userstyle plugin.
- *
- * For a detailed overview, check the {@glink features/userstyle UserStyle feature} documentation.
- *
- * This is a "glue" plugin which loads the {@link module:userstyle/userstyleediting~UserStyleEditing} and
- * {@link module:userstyle/userstyleui~UserStyleUI} plugins.
- *
- * @extends module:core/plugin~Plugin
+ * Glue plugin that loads the CMS plugin editing and UI plugins.
  */
 
 export default class CMSPlugin extends Plugin {
     static get requires() {
-        return [ CMSPluginEditing ];
-    }
-
-    init() {
-        console.log("CmsPlugin.init");
+        return [ CMSPluginEditing, CMSPluginUI ];
     }
 }

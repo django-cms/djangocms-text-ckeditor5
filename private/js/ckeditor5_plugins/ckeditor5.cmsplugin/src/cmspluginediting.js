@@ -2,11 +2,9 @@
 /* jshint esversion: 11 */
 
 
-import Plugin from '@ckeditor/ckeditor5-core/src/plugin';
-import { stringify } from '@ckeditor/ckeditor5-engine/src/dev-utils/view';
-import { toWidget } from '@ckeditor/ckeditor5-widget/src/utils';
-import Widget from '@ckeditor/ckeditor5-widget/src/widget';
-import CMSPluginCommand from "./cmsplugincommand";
+import { Plugin } from '@ckeditor/ckeditor5-core';
+import { _stringifyView as stringify } from '@ckeditor/ckeditor5-engine';
+import { Widget, toWidget } from '@ckeditor/ckeditor5-widget';
 
 const blockTags = ((str) => str.toUpperCase().substring(1, str.length-1).split("><"))(
     "<address><article><aside><blockquote><canvas><dd><div><dl><dt><fieldset><figcaption><figure><footer><form>" +
@@ -35,7 +33,6 @@ export default class CMSPluginEditing extends Plugin {
     init() {
         this._defineSchema();
         this._defineConverters();
-        this.editor.commands.add( 'cms-plugin', new CMSPluginCommand( this.editor ) );
     }
 
     _defineSchema() {
@@ -46,12 +43,15 @@ export default class CMSPluginEditing extends Plugin {
 
         schema.register( inlinePluginSchema, {
             isObject: true,
+            isInline: true,
             allowWhere: '$text',
+            allowAttributesOf: '$text',
             allowAttributes: pluginAttributes
         } );
 
         schema.register( blockPluginSchema, {
             isObject: true,
+            isBlock: true,
             allowWhere: '$block',
             allowAttributes: pluginAttributes
         } );
@@ -94,15 +94,10 @@ export default class CMSPluginEditing extends Plugin {
             } )
             .elementToElement({
                 model: blockPluginSchema,
-                view: (modelItem, {writer: viewWriter}) => {
-                    const widget = toWidget(createCMSPluginView(modelItem, viewWriter, true), viewWriter, {
+                view: (modelItem, {writer: viewWriter}) =>
+                    toWidget(createCMSPluginView(modelItem, viewWriter, true), viewWriter, {
                         label: modelItem.getAttribute('plugin_title'),
-                    });
-                    widget.on('dblclick', () => {
-                        alert('dblclick');
-                    });
-                    return widget;
-                }
+                    })
             });
 
         conversion.for( 'dataDowncast' )

@@ -1,8 +1,11 @@
 /* eslint-env es11 */
 /* jshint esversion: 11 */
 
-import {Plugin} from 'ckeditor5/src/core';
-import {ensureSafeUrl} from "@ckeditor/ckeditor5-link/src/utils";
+import { Plugin } from '@ckeditor/ckeditor5-core';
+import {
+    addLinkProtocolIfApplicable,
+    _ensureSafeLinkUrl as ensureSafeUrl,
+} from '@ckeditor/ckeditor5-link';
 
 
 /**
@@ -234,10 +237,25 @@ export default class CmsLink extends Plugin {
                         attrs.cmsHref = selectElement.value;
                     } else {
                         const url = this.autoComplete?.inputElement?.value || linkFormView.urlInputView.fieldView.element.value;
+                        const defaultProtocol = editor.config.get('link.defaultProtocol');
                         attrs.href = addLinkProtocolIfApplicable(url, defaultProtocol);
                     }
-                    const displayedText = linkFormView.displayedTextInputView.fieldView.element.value;
-                    editor.execute('link', attrs, editor.plugins.get('LinkUI')._getDecoratorSwitchesState(), displayedText !== this.selectedLinkableText ? displayedText : undefined);
+                    const rawDisplayedText = linkFormView.displayedTextInputView.fieldView.element.value;
+                    const isCollapsed = editor.model.document.selection.isCollapsed;
+                    let displayedText;
+                    if (rawDisplayedText && rawDisplayedText !== this.selectedLinkableText) {
+                        displayedText = rawDisplayedText;
+                    } else if (isCollapsed) {
+                        // For a collapsed selection LinkCommand inserts a new text
+                        // node and falls back to the `href` argument as the text body
+                        // when no displayedText is given. Our `href` is an object
+                        // ({href, cmsHref}), which would stringify to "[object Object]".
+                        // Pass a URL-ish string explicitly so the inserted text reads
+                        // as something useful — prefer the resolved URL, fall back to
+                        // the cmsHref token when only that is set (CMS-link path).
+                        displayedText = attrs.href || attrs.cmsHref;
+                    }
+                    editor.execute('link', attrs, editor.plugins.get('LinkUI')._getDecoratorSwitchesState(), displayedText);
                     editor.plugins.get('LinkUI')._closeFormView();
                 }
                 event.stop();
