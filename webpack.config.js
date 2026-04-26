@@ -1,6 +1,6 @@
 const path = require('path');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const {styles} = require('@ckeditor/ckeditor5-dev-utils');
+const {loaders} = require('@ckeditor/ckeditor5-dev-utils');
 const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 
 
@@ -33,32 +33,15 @@ module.exports = {
                 test: /ckeditor5[^/\\]+[/\\]theme[/\\]icons[/\\][^/\\]+\.svg$/,
                 use: ['raw-loader']
             },
+            // Inject CKE5's theme CSS via style-loader. Matches the meta package's
+            // dist/ckeditor5*.css bundle (v44+) and the legacy per-package theme/
+            // paths (used by older CKE5 features).
             {
-                test: /ckeditor5-[^/\\]+[/\\]theme[/\\].+\.css$/,
-
-                use: [
-                    {
-                        loader: 'style-loader',
-                        options: {
-                            injectType: 'singletonStyleTag',
-                            attributes: {
-                                'data-cke': true
-                            }
-                        }
-                    },
-                    'css-loader',
-                    {
-                        loader: 'postcss-loader',
-                        options: {
-                            postcssOptions: styles.getPostCssConfig({
-                                themeImporter: {
-                                    themePath: require.resolve('@ckeditor/ckeditor5-theme-lark')
-                                },
-                                minify: true
-                            })
-                        }
-                    }
-                ]
+                ...loaders.getStylesLoader({
+                    themePath: require.resolve('@ckeditor/ckeditor5-theme-lark'),
+                    minify: true,
+                }),
+                test: /(ckeditor5[/\\](dist[/\\])?[^/\\]+\.css|ckeditor5-[^/\\]+[/\\]theme[/\\].+\.css)$/,
             },
             {
                 test: /\.css$/,

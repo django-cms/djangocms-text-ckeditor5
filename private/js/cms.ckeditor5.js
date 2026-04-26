@@ -2,51 +2,45 @@
 /* jshint esversion: 6 */
 /* global document, window, console */
 
+// CKEditor 5 v44+ ships its theme CSS as a separate bundle in the meta package.
+// Importing it here gets it injected via style-loader at editor-load time.
+import 'ckeditor5/ckeditor5.css';
 
 // The editor creator to use.
-import ClassicEditorBase from '@ckeditor/ckeditor5-editor-classic/src/classiceditor';
-import InlineEditorBase from  '@ckeditor/ckeditor5-editor-inline/src/inlineeditor';
-import BlockToolbar from '@ckeditor/ckeditor5-ui/src/toolbar/block/blocktoolbar';
+import { ClassicEditor as ClassicEditorBase } from '@ckeditor/ckeditor5-editor-classic';
+import { InlineEditor as InlineEditorBase } from '@ckeditor/ckeditor5-editor-inline';
+import { BlockToolbar } from '@ckeditor/ckeditor5-ui';
 
-
-import Essentials from '@ckeditor/ckeditor5-essentials/src/essentials';
-// import UploadAdapter from '@ckeditor/ckeditor5-adapter-ckfinder/src/uploadadapter';
-import Autoformat from '@ckeditor/ckeditor5-autoformat/src/autoformat';
-import Autosave from '@ckeditor/ckeditor5-autosave/src/autosave';
-import Alignment from '@ckeditor/ckeditor5-alignment/src/alignment';
-import Bold from '@ckeditor/ckeditor5-basic-styles/src/bold';
-import Italic from '@ckeditor/ckeditor5-basic-styles/src/italic';
-import Underline from '@ckeditor/ckeditor5-basic-styles/src/underline';
-import Strikethrough from '@ckeditor/ckeditor5-basic-styles/src/strikethrough';
-import Code from '@ckeditor/ckeditor5-basic-styles/src/code';
-import Subscript from '@ckeditor/ckeditor5-basic-styles/src/subscript';
-import Superscript from '@ckeditor/ckeditor5-basic-styles/src/superscript';
-import Font from '@ckeditor/ckeditor5-font/src/font';
-import BlockQuote from '@ckeditor/ckeditor5-block-quote/src/blockquote';
-import CodeBlock from '@ckeditor/ckeditor5-code-block/src/codeblock';
-import Heading from '@ckeditor/ckeditor5-heading/src/heading';
-import HeadingButtonsUI from '@ckeditor/ckeditor5-heading/src/headingbuttonsui';
-// import Base64UploadAdapter from '@ckeditor/ckeditor5-upload/src/adapters/base64uploadadapter';
-// import Image from '@ckeditor/ckeditor5-image/src/image';
-// import ImageCaption from '@ckeditor/ckeditor5-image/src/imagecaption';
-// import ImageStyle from '@ckeditor/ckeditor5-image/src/imagestyle';
-// import ImageToolbar from '@ckeditor/ckeditor5-image/src/imagetoolbar';
-// import ImageUpload from '@ckeditor/ckeditor5-image/src/imageupload';
-import Indent from '@ckeditor/ckeditor5-indent/src/indent';
-import Link from '@ckeditor/ckeditor5-link/src/link';
-import List from '@ckeditor/ckeditor5-list/src/list';
-import MediaEmbed from '@ckeditor/ckeditor5-media-embed/src/mediaembed';
-import Paragraph from '@ckeditor/ckeditor5-paragraph/src/paragraph';
-import ParagraphButtonUI from '@ckeditor/ckeditor5-paragraph/src/paragraphbuttonui';
-import PasteFromOffice from '@ckeditor/ckeditor5-paste-from-office/src/pastefromoffice';
-import RemoveFormat from '@ckeditor/ckeditor5-remove-format/src/removeformat';
-import ShowBlocks from '@ckeditor/ckeditor5-show-blocks/src/showblocks';
-import Table from '@ckeditor/ckeditor5-table/src/table';
-import TableToolbar from '@ckeditor/ckeditor5-table/src/tabletoolbar';
-import TextTransformation from '@ckeditor/ckeditor5-typing/src/texttransformation';
-import SourceEditing from '@ckeditor/ckeditor5-source-editing/src/sourceediting';
-import HorizontalLine from '@ckeditor/ckeditor5-horizontal-line/src/horizontalline';
-import {Style} from '@ckeditor/ckeditor5-style';
+import { Essentials } from '@ckeditor/ckeditor5-essentials';
+import { Autoformat } from '@ckeditor/ckeditor5-autoformat';
+import { Autosave } from '@ckeditor/ckeditor5-autosave';
+import { Alignment } from '@ckeditor/ckeditor5-alignment';
+import {
+    Bold,
+    Italic,
+    Underline,
+    Strikethrough,
+    Code,
+    Subscript,
+    Superscript,
+} from '@ckeditor/ckeditor5-basic-styles';
+import { Font } from '@ckeditor/ckeditor5-font';
+import { BlockQuote } from '@ckeditor/ckeditor5-block-quote';
+import { CodeBlock } from '@ckeditor/ckeditor5-code-block';
+import { Heading, HeadingButtonsUI } from '@ckeditor/ckeditor5-heading';
+import { Indent } from '@ckeditor/ckeditor5-indent';
+import { Link } from '@ckeditor/ckeditor5-link';
+import { List } from '@ckeditor/ckeditor5-list';
+import { MediaEmbed } from '@ckeditor/ckeditor5-media-embed';
+import { Paragraph, ParagraphButtonUI } from '@ckeditor/ckeditor5-paragraph';
+import { PasteFromOffice } from '@ckeditor/ckeditor5-paste-from-office';
+import { RemoveFormat } from '@ckeditor/ckeditor5-remove-format';
+import { ShowBlocks } from '@ckeditor/ckeditor5-show-blocks';
+import { Table, TableToolbar } from '@ckeditor/ckeditor5-table';
+import { TextTransformation } from '@ckeditor/ckeditor5-typing';
+import { SourceEditing } from '@ckeditor/ckeditor5-source-editing';
+import { HorizontalLine } from '@ckeditor/ckeditor5-horizontal-line';
+import { Style } from '@ckeditor/ckeditor5-style';
 import { GeneralHtmlSupport } from '@ckeditor/ckeditor5-html-support';
 
 import CmsPlugin from './ckeditor5_plugins/ckeditor5.cmsplugin/index';
@@ -198,6 +192,7 @@ class CmsCKEditor5Plugin {
             JustifyLeft: 'Alignment',
             Strike: 'Strikethrough',
             Styles: 'Style',
+            CMSPlugins: 'cms-plugin',
         };
         this._unsupportedPlugins = [
             'Unlink', 'PasteFromWord', 'PasteText', 'Maximize',
@@ -287,6 +282,29 @@ class CmsCKEditor5Plugin {
         }
         if (options.url_endpoint) {
             options.options.url_endpoint = options.url_endpoint;
+        }
+
+        // Bridge djangocms-text's flat settings into the cmsPlugin config namespace
+        // expected by the CMSPlugin/CMSPluginUI editor plugins.
+        const cmsPlugin = options.options.cmsPlugin || {};
+        cmsPlugin.installed_plugins = cmsPlugin.installed_plugins || options.installed_plugins || [];
+        cmsPlugin.placeholder = cmsPlugin.placeholder || options.placeholder_id;
+        cmsPlugin.pk = cmsPlugin.pk || options.plugin_id;
+        cmsPlugin.plugin_position = cmsPlugin.plugin_position || options.plugin_position;
+        cmsPlugin.plugin_language = cmsPlugin.plugin_language || options.plugin_language;
+        cmsPlugin.lang = cmsPlugin.lang || options.lang || {};
+        options.options.cmsPlugin = cmsPlugin;
+
+        // Push the toolbar / panel positioning down past the django CMS frontend
+        // toolbar so the inline editor's sticky top toolbar isn't hidden behind it.
+        // Only applied in the frame that actually hosts the CMS toolbar — admin
+        // iframes don't have one, so the query returns null and the offset is 0.
+        options.options.ui = options.options.ui || {};
+        if (!options.options.ui.viewportOffset) {
+            const cmsToolbar = document.querySelector('.cms-toolbar');
+            options.options.ui.viewportOffset = {
+                top: cmsToolbar ? cmsToolbar.offsetHeight : 0,
+            };
         }
 
         let blockToolbar = [];

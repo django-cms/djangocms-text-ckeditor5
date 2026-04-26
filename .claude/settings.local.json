@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(npx webpack *)",
+      "Bash(npm test *)",
+      "Bash(npm run *)",
+      "Bash(node -e 'console.log\\(Object.keys\\(require\\('\\\\''@ckeditor/ckeditor5-'\\\\''+'\\\\''__TRACKED_VAR__'\\\\''\\)\\).join\\('\\\\'','\\\\''\\)\\)')"
+    ]
+  }
+}

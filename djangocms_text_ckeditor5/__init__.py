@@ -15,4 +15,5 @@ ckeditor5 = RTEConfig(
         )
     },
     inline_editing=True,
+    child_plugin_support=True
 )
