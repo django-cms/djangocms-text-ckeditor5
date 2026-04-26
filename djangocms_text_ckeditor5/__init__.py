@@ -1,7 +1,7 @@
 from djangocms_text.editors import RTEConfig
 
 
-__version__ = "0.2.6"
+__version__ = "0.48.0"
 
 
 ckeditor5 = RTEConfig(
