@@ -1,5 +1,5 @@
-extension-text-ckeditor5
-========================
+django CMS text CKEditor 5
+==========================
 
 |pypi| |djangocms| |djangocms4|
 
