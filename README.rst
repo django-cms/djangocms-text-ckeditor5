@@ -1,7 +1,7 @@
 django CMS text CKEditor 5
 ==========================
 
-|pypi| |djangocms| |djangocms4|
+|pypi| |djangocms|
 
 djangocms-text-ckeditor5 is an extension to ``djangocms-text`` offering CKEditor5 as
 a rich text editor to djangocms-text.
@@ -60,6 +60,13 @@ and set the editor you want to use:
     TEXT_EDITOR = "djangocms_text_ckeditor5.ckeditor5"
 
 
+Versioning
+----------
+
+The minor version of ``djangocms-text-ckeditor5`` reflects the major version of
+CKEditor 5 included in the package. For example, ``djangocms-text-ckeditor5
+0.48.x`` includes CKEditor 5 version 48.x.
+
 Contributing
 ------------
 
@@ -71,10 +78,8 @@ License
 
 The CKEditor 5 and this package are licensed under the GPL-2.0 License.
 
-.. |pypi| image:: https://img.shields.io/pypi/v/djangocms-text-ckeditor5
-   :target: https://pypi.org/project/djangocms-text-ckeditor5/
-
-.. |djangocms| image:: https://img.shields.io/badge/django--cms-3.11+-blue
-   :target: https://pypi.org/project/djangocms/
-
-.. |djangocms4| image:: https://img.shields.io/badge/django--cms-4%2F5-blue
+.. |pypi| image:: https://badge.fury.io/py/djangocms-text-ckeditor5.svg
+    :target: https://badge.fury.io/py/djangocms-text-ckeditor5
+.. |djangocms| image:: https://img.shields.io/pypi/frameworkversions/django-cms/djangocms-text-ckeditor5
+    :alt: PyPI - django CMS Versions from Framework Classifiers
+    :target: https://www.django-cms.org/
