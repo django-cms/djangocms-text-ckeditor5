@@ -2,7 +2,7 @@
 Changelog
 =========
 
-0.48.2 (unreleased)
+0.48.1 (2026-09-14)
 ===================
 
 * fix: Do not put toolbar items into the CKEditor 5 toolbar that have no
@@ -18,14 +18,11 @@ Changelog
   for the active Django language.
 * feat: Allow ``shouldNotGroupWhenFull`` in ``TEXT_EDITOR_SETTINGS`` and accept
   the ``{"items": [...]}`` object form of a toolbar configuration.
-
-0.48.1 (2026-09-14)
-===================
-
 * feat: Honor djangocms-text's ``bodyClass`` setting by applying the class names
   to the editing root element
 
 0.48.0 (2026-04-26)
+===================
 
 * feat: Add full support for text-enabled CMS plugins
 * chore: Switch versioning to x.<ckeditor-version>.y
