@@ -45,6 +45,7 @@ import { GeneralHtmlSupport } from '@ckeditor/ckeditor5-html-support';
 
 import CmsPlugin from './ckeditor5_plugins/ckeditor5.cmsplugin/index';
 import CmsLink from "./ckeditor5_plugins/ckeditor5.cmslink/index";
+import { parseBodyClasses } from './ckeditor5_plugins/ckeditor5.cmsplugin/src/utils';
 
 class ClassicEditor extends ClassicEditorBase {}
 class InlineEditor extends InlineEditorBase {}
@@ -211,8 +212,10 @@ class CmsCKEditor5Plugin {
         if (!(el.id in this._editors)) {
             const inline = el.tagName !== 'TEXTAREA';
             this._update_options(options, inline);
+            const bodyClasses = parseBodyClasses(options.options.bodyClass);
             if (!inline) {
                 ClassicEditor.create(el, options.options).then( editor => {
+                    this._applyBodyClasses(editor, bodyClasses);
                     this._editors[el.id] = editor;
                 });
             } else {
@@ -222,6 +225,7 @@ class CmsCKEditor5Plugin {
                         const editableElement = editor.editing.view.document.getRoot();
                         writer.removeClass('ck-content', editableElement);
                     });
+                    this._applyBodyClasses(editor, bodyClasses);
                     this._editors[el.id] = editor;
                     editor.isDirty = false;
                     editor.model.document.on('change:data', () => editor.isDirty = true);
@@ -249,6 +253,25 @@ class CmsCKEditor5Plugin {
                 });
             }
         }
+    }
+
+    // Applies djangocms-text's `bodyClass` setting to the editing root.
+    //
+    // CKEditor 4 rendered its editable area in an iframe and put these classes
+    // on that iframe's <body>, which let projects scope content CSS to the
+    // parent plugins a text plugin sits in. CKEditor 5 edits a contenteditable
+    // in the host document, so the classes go on the editing root element
+    // instead: `.ck-editor__editable.my-class h1 { ... }`.
+    _applyBodyClasses (editor, classes) {
+        if (!classes || classes.length === 0) {
+            return;
+        }
+        editor.editing.view.change(writer => {
+            const editableElement = editor.editing.view.document.getRoot();
+            for (const className of classes) {
+                writer.addClass(className, editableElement);
+            }
+        });
     }
 
     // returns the edited html code

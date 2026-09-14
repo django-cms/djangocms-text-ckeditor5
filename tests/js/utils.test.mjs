@@ -4,6 +4,7 @@ import { strict as assert } from 'node:assert';
 import {
     filterDropdownPlugins,
     isBlockPlugin,
+    parseBodyClasses,
     parsePluginMarkup,
     rangeItemsToText,
     toolbarItemNames,
@@ -165,5 +166,32 @@ describe('parsePluginMarkup', () => {
     it('defaults type to CmsPluginBase when missing', { skip: !hasDom }, () => {
         const result = parsePluginMarkup('<cms-plugin id="1"></cms-plugin>');
         assert.equal(result.attrs.type, 'CmsPluginBase');
+    });
+});
+
+describe('parseBodyClasses', () => {
+    it('returns an empty list for empty / missing input', () => {
+        assert.deepEqual(parseBodyClasses(undefined), []);
+        assert.deepEqual(parseBodyClasses(null), []);
+        assert.deepEqual(parseBodyClasses(''), []);
+        assert.deepEqual(parseBodyClasses('   '), []);
+    });
+
+    it('splits a whitespace-separated string', () => {
+        assert.deepEqual(parseBodyClasses('dark-theme'), ['dark-theme']);
+        assert.deepEqual(parseBodyClasses('dark-theme narrow-column'), ['dark-theme', 'narrow-column']);
+    });
+
+    it('tolerates the leading / repeated whitespace the Python side produces', () => {
+        // _get_body_css_classes_from_parent_plugins concatenates with " " + cls
+        assert.deepEqual(parseBodyClasses(' dark-theme  narrow-column\n'), ['dark-theme', 'narrow-column']);
+    });
+
+    it('de-duplicates class names', () => {
+        assert.deepEqual(parseBodyClasses('a b a'), ['a', 'b']);
+    });
+
+    it('accepts an array as well', () => {
+        assert.deepEqual(parseBodyClasses(['a', ' b ', '', null]), ['a', 'b']);
     });
 });
