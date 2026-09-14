@@ -2,6 +2,23 @@
 Changelog
 =========
 
+0.48.1 (unreleased)
+===================
+
+* fix: Do not put toolbar items into the CKEditor 5 toolbar that have no
+  counterpart in CKEditor 5 (``BlockStyles``, ``InlineStyles``,
+  ``InlineQuote``, ``cmswidget``, buttons for CMS plugins that are not
+  installed). They made CKEditor 5 log ``toolbarview-item-unavailable``.
+* fix: Map ``TextColor`` and ``BGColor`` to the CKEditor 5 font color
+  components and add the ``Highlight`` plugin to the build, so the default
+  toolbar's color buttons work.
+* fix: Show the format dropdown in the classic (modal) editor again -- the
+  ``Format`` toolbar item was silently dropped.
+* fix: Translate the editor user interface. Translations are loaded on demand
+  for the active Django language.
+* feat: Allow ``shouldNotGroupWhenFull`` in ``TEXT_EDITOR_SETTINGS`` and accept
+  the ``{"items": [...]}`` object form of a toolbar configuration.
+
 0.48.0 (2026-04-26)
 
 * feat: Add full support for text-enabled CMS plugins
