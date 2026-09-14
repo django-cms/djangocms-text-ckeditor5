@@ -89,6 +89,34 @@ language actually in use is transferred. A regional code falls back to its
 base language (``de-at`` uses the German translation); languages CKEditor 5
 does not translate stay in English.
 
+Styling the editor content
+--------------------------
+
+CKEditor 5 has no editing ``<iframe>``: it edits a ``contenteditable`` element
+in the surrounding document, so in a modal or any admin page the admin's stylesheets
+apply to the content being edited.
+
+To scope your own content styles, use djangocms-text's ``bodyClass`` mechanism.
+Give a plugin a ``child_ckeditor_body_css_class`` attribute (or a
+``get_child_ckeditor_body_css_class()`` method) and every text plugin nested
+below it gets those class names on the editing root:
+
+.. code-block:: python
+
+    class DarkSectionPlugin(CMSPluginBase):
+        child_ckeditor_body_css_class = "dark-section"
+
+.. code-block:: css
+
+    .ck-editor__editable.dark-section {
+        background: #222;
+        color: #eee;
+    }
+
+A global default for every text plugin can be set through the ``bodyClass`` key
+of ``TEXT_EDITOR_SETTINGS`` (or of the dict named by ``TEXT_CONFIGURATION``, if
+you use one). Classes contributed by parent plugins take precedence over it.
+
 Versioning
 ----------
 

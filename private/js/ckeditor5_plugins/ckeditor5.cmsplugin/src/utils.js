@@ -125,3 +125,28 @@ export function parsePluginMarkup(markup) {
         },
     };
 }
+
+/**
+ * Normalizes djangocms-text's `bodyClass` editor setting into a list of class
+ * names. The setting is a whitespace-separated string collected from the
+ * parent plugins' `child_ckeditor_body_css_class` attributes (CKEditor 4 put
+ * it on the `<body>` of its editing iframe; CKEditor 5 has no such iframe, so
+ * the classes go on the editing root instead).
+ *
+ * @param {string|Array<string>|undefined|null} bodyClass
+ * @returns {Array<string>} unique, non-empty class names
+ */
+export function parseBodyClasses(bodyClass) {
+    if (!bodyClass) {
+        return [];
+    }
+    const raw = Array.isArray(bodyClass) ? bodyClass : String(bodyClass).split(/\s+/);
+    const seen = new Set();
+    for (const item of raw) {
+        const name = typeof item === 'string' ? item.trim() : '';
+        if (name) {
+            seen.add(name);
+        }
+    }
+    return [...seen];
+}

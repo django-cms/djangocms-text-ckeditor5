@@ -47,6 +47,7 @@ import { GeneralHtmlSupport } from '@ckeditor/ckeditor5-html-support';
 
 import CmsPlugin from './ckeditor5_plugins/ckeditor5.cmsplugin/index';
 import CmsLink from "./ckeditor5_plugins/ckeditor5.cmslink/index";
+import { parseBodyClasses } from './ckeditor5_plugins/ckeditor5.cmsplugin/src/utils';
 import { PLUGIN_NAMES, UNSUPPORTED_PLUGINS, buildToolbars, splitToolbarConfig } from './cms.ckeditor5.toolbar';
 import { translationCandidates, uiLanguage } from './cms.ckeditor5.language';
 
@@ -267,8 +268,10 @@ class CmsCKEditor5Plugin {
     }
 
     _create (el, inline, options, save_callback) {
+        const bodyClasses = parseBodyClasses(options.options.bodyClass);
         if (!inline) {
             return ClassicEditor.create(el, options.options).then( editor => {
+                this._applyBodyClasses(editor, bodyClasses);
                 this._editors[el.id] = editor;
             });
         } else {
@@ -278,6 +281,7 @@ class CmsCKEditor5Plugin {
                     const editableElement = editor.editing.view.document.getRoot();
                     writer.removeClass('ck-content', editableElement);
                 });
+                this._applyBodyClasses(editor, bodyClasses);
                 this._editors[el.id] = editor;
                 editor.isDirty = false;
                 editor.model.document.on('change:data', () => editor.isDirty = true);
@@ -304,6 +308,25 @@ class CmsCKEditor5Plugin {
                 }
             });
         }
+    }
+
+    // Applies djangocms-text's `bodyClass` setting to the editing root.
+    //
+    // CKEditor 4 rendered its editable area in an iframe and put these classes
+    // on that iframe's <body>, which let projects scope content CSS to the
+    // parent plugins a text plugin sits in. CKEditor 5 edits a contenteditable
+    // in the host document, so the classes go on the editing root element
+    // instead: `.ck-editor__editable.my-class h1 { ... }`.
+    _applyBodyClasses (editor, classes) {
+        if (!classes || classes.length === 0) {
+            return;
+        }
+        editor.editing.view.change(writer => {
+            const editableElement = editor.editing.view.document.getRoot();
+            for (const className of classes) {
+                writer.addClass(className, editableElement);
+            }
+        });
     }
 
     // returns the edited html code
