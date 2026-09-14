@@ -2,6 +2,12 @@
 Changelog
 =========
 
+0.48.1 (2026-09-14)
+===================
+
+* feat: Honor djangocms-text's ``bodyClass`` setting by applying the class names
+  to the editing root element
+
 0.48.0 (2026-04-26)
 
 * feat: Add full support for text-enabled CMS plugins
