@@ -1,5 +1,5 @@
-/* eslint-env es6 */
-/* jshint esversion: 6 */
+/* eslint-env es11 */
+/* jshint esversion: 11 */
 /* global document, window, console, __webpack_public_path__ */
 
 // CKEditor 5 v44+ ships its theme CSS as a separate bundle in the meta package.
@@ -260,7 +260,7 @@ class CmsCKEditor5Plugin {
                     addTranslation(code, translation.dictionary, translation.getPluralForm);
                 }
                 return;
-            } catch (error) {
+            } catch {
                 // Not shipped by CKEditor 5 — try the next, less specific candidate.
             }
         }
