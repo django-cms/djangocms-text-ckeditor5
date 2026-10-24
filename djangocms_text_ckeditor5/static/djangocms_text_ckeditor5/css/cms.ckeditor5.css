@@ -19,7 +19,7 @@
     }
     button {
         width: auto  !important;
-        padding: var(--ck-spacing-tiny)  !important;
+        padding: var(--ck-spacing-xs)  !important;
         border: 1px solid transparent  !important;
     }
     .ck.ck-list button {
@@ -52,6 +52,11 @@ body {
     --ck-color-text: var(--dca-black);
     --ck-color-dropdown-panel-background: var(--dca-white);
     --ck-color-dropdown-panel-border: var(--dca-gray-lighter);
+    --ck-color-list-background: var(--dca-white);
+    --ck-dropdown-list-background-color: var(--dca-white);
+    --ck-button-default-hover-background-color: var(--dca-gray-lightest);
+    --ck-button-default-active-background-color: var(--dca-gray-lighter);
+    --ck-list-button-hover-background-color: var(--dca-gray-lightest);
 }
 
 body.change-form .ck-editor__main {

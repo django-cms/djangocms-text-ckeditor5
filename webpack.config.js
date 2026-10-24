@@ -38,7 +38,6 @@ module.exports = {
             // paths (used by older CKE5 features).
             {
                 ...loaders.getStylesLoader({
-                    themePath: require.resolve('@ckeditor/ckeditor5-theme-lark'),
                     minify: true,
                 }),
                 test: /(ckeditor5[/\\](dist[/\\])?[^/\\]+\.css|ckeditor5-[^/\\]+[/\\]theme[/\\].+\.css)$/,

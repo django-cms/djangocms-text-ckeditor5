@@ -2,6 +2,12 @@
 Changelog
 =========
 
+0.49.0 (2026-10-24)
+===================
+
+* feat: Update to CKEditor 49
+* fix: Update linkfield css
+
 0.48.1 (2026-09-14)
 ===================
 
@@ -9,6 +15,7 @@ Changelog
   to the editing root element
 
 0.48.0 (2026-04-26)
+===================
 
 * feat: Add full support for text-enabled CMS plugins
 * chore: Switch versioning to x.<ckeditor-version>.y

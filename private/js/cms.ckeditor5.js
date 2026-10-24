@@ -192,6 +192,7 @@ class CmsCKEditor5Plugin {
             HorizontalRule: 'horizontalLine',
             JustifyLeft: 'Alignment',
             Strike: 'Strikethrough',
+            TextColor: 'fontColor',
             Styles: 'Style',
             CMSPlugins: 'cms-plugin',
         };
