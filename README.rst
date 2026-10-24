@@ -68,7 +68,7 @@ Configuration
 The editor reads ``TEXT_EDITOR_SETTINGS`` from ``djangocms-text``. Its toolbar
 uses the CKEditor 4 item names shared by all ``djangocms-text`` editors; they
 are translated to the matching CKEditor 5 components (``Table`` becomes
-``insertTable``, ``TextColor`` becomes ``fontColor``, and so on). Items that
+``insertTable``, ``TextColor`` becomes ``cmsTextColor``, and so on). Items that
 CKEditor 5 has no counterpart for -- ``Unlink``, ``Maximize``,
 ``PasteFromWord``, ``InlineQuote``, ... -- are dropped, as are buttons for CMS
 plugins that are not installed. CKEditor 5 component names can be used
@@ -88,6 +88,85 @@ translations ship with the package and are loaded on demand, so only the
 language actually in use is transferred. A regional code falls back to its
 base language (``de-at`` uses the German translation); languages CKEditor 5
 does not translate stay in English.
+
+Class-based text colors
+----------------------
+
+The ``TextColor`` toolbar item uses the same class-based palette as
+djangocms-text's Tiptap editor. Choosing a color writes, for example,
+``<span class="text-primary">...</span>``. Choosing the active color again,
+or choosing ``Remove color``, removes it. With the caret inside colored text,
+the choice applies to that whole colored section. Undo and redo are supported.
+
+The default classes are ``text-primary``, ``text-secondary``, ``text-success``,
+``text-danger``, ``text-warning``, ``text-info``, ``text-light``, ``text-dark``,
+``text-body``, and ``text-muted``. Replace this palette using ``textColors``:
+
+.. code-block:: python
+
+    TEXT_EDITOR_SETTINGS = {
+        "textColors": {
+            "brand-ink": {"name": "Brand ink"},
+            "brand-accent": {"name": "Brand accent"},
+        },
+    }
+
+Define the classes in your site's CSS and load that CSS in the editor too.
+Menu previews use these same classes; the plugin does not supply color values.
+Configured color classes are recognized on existing spans and other HTML
+elements. Applying a class clears any inline text color on the selection so
+the class can take effect. Existing inline colors remain supported by
+CKEditor's native ``fontColor`` toolbar item, which can be configured separately.
+
+Class-based background colors
+-----------------------------
+
+The ``BGColor`` toolbar item (``cmsBackgroundColor`` in CKEditor 5) applies
+background classes with the same preview, toggle, removal, and undo behavior.
+Text and background colors are independent, so either can be changed or removed
+without clearing the other. Applying a background class clears an existing
+inline background color on the selection.
+
+The default palette contains ``bg-primary``, ``bg-secondary``, ``bg-success``,
+``bg-danger``, ``bg-warning``, ``bg-info``, ``bg-light``, ``bg-dark``, ``bg-body``,
+and ``bg-transparent``. Replace it using ``backgroundColors``:
+
+.. code-block:: python
+
+    TEXT_EDITOR_SETTINGS = {
+        "backgroundColors": {
+            "brand-fill": {"name": "Brand fill"},
+            "brand-subtle": {"name": "Brand subtle"},
+        },
+    }
+
+Define these background classes in CSS loaded by both the site and the editor.
+For example, ``.brand-fill { background-color: #ffe599; }`` produces
+``<span class="brand-fill">...</span>`` when selected. The native
+``fontBackgroundColor`` toolbar item remains available for inline colors.
+
+Activating the legacy color palettes
+-----------------------------------
+
+To use CKEditor's original palettes that write inline ``color`` and
+``background-color`` styles, replace ``TextColor`` with ``fontColor`` and
+``BGColor`` with ``fontBackgroundColor`` in your toolbar configuration:
+
+.. code-block:: python
+
+    TEXT_EDITOR_SETTINGS = {
+        "toolbar": [
+            ["Undo", "Redo"],
+            ["Bold", "Italic", "Link"],
+            ["fontColor", "fontBackgroundColor"],
+        ],
+    }
+
+This example replaces the default toolbar; include any other toolbar items you
+want to keep. The native plugins are already included, so no additional plugin
+installation is needed. Their palettes use CKEditor's ``fontColor`` and
+``fontBackgroundColor`` settings; ``textColors`` and ``backgroundColors``
+configure the class-based tools only.
 
 Styling the editor content
 --------------------------

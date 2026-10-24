@@ -6,6 +6,15 @@ Changelog
 ===================
 
 * feat: Update to CKEditor 49
+* feat: Add class-based ``TextColor`` and ``BGColor`` tools, using the
+  ``text-*`` and ``bg-*`` CSS classes. Configure their palettes with
+  ``textColors`` and ``backgroundColors``. Both tools support color previews,
+  toggling, removal, and undo/redo; text and background colors are independent.
+  Load the classes' CSS in both the site and the editor.
+* change: ``TextColor`` and ``BGColor`` now select the class-based tools.
+  To activate the original inline-style color palettes, replace these toolbar
+  items with ``fontColor`` and ``fontBackgroundColor`` respectively in
+  ``TEXT_EDITOR_SETTINGS["toolbar"]``. Existing inline colors remain supported.
 * fix: Update linkfield css
 
 0.48.1 (2026-09-14)

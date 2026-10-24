@@ -47,6 +47,8 @@ import { GeneralHtmlSupport } from '@ckeditor/ckeditor5-html-support';
 
 import CmsPlugin from './ckeditor5_plugins/ckeditor5.cmsplugin/index';
 import CmsLink from "./ckeditor5_plugins/ckeditor5.cmslink/index";
+import CMSTextColor from './ckeditor5_plugins/ckeditor5.cmstextcolor/index';
+import CMSBackgroundColor from './ckeditor5_plugins/ckeditor5.cmsbackgroundcolor/index';
 import { parseBodyClasses } from './ckeditor5_plugins/ckeditor5.cmsplugin/src/utils';
 import { PLUGIN_NAMES, UNSUPPORTED_PLUGINS, buildToolbars, splitToolbarConfig } from './cms.ckeditor5.toolbar';
 import { translationCandidates, uiLanguage } from './cms.ckeditor5.language';
@@ -81,6 +83,8 @@ const builtinPlugins = [
     Subscript,
     Superscript,
     Font,
+    CMSTextColor,
+    CMSBackgroundColor,
     CodeBlock,
 	BlockQuote,
     GeneralHtmlSupport,
@@ -124,7 +128,7 @@ const defaultConfig = {
             'bold', 'italic', 'underline', 'alignment', '|', 'link',
 			'bulletedList', 'numberedList', 'outdent', 'indent', '|',
             'code', 'codeblock', '|',
-            'fontFamily', 'fontSize', 'fontColor', '|',
+            'fontFamily', 'fontSize', 'cmsTextColor', 'cmsBackgroundColor', '|',
             'mediaEmbed', 'insertTable', 'horizontalLine', 'blockQuote',
 		],
 	},
@@ -182,7 +186,7 @@ InlineEditor.defaultConfig = {
             'bold', 'italic', 'alignment', '|',
 			'link', '|',
             'code', '|',
-            'fontFamily', 'fontSize', 'fontColor', '|',
+            'fontFamily', 'fontSize', 'cmsTextColor', 'cmsBackgroundColor', '|',
 		]
 	},
     blockToolbar: {
@@ -360,6 +364,12 @@ class CmsCKEditor5Plugin {
         }
         if (options.url_endpoint) {
             options.options.url_endpoint = options.url_endpoint;
+        }
+        if (options.textColors !== undefined && options.options.textColors === undefined) {
+            options.options.textColors = options.textColors;
+        }
+        if (options.backgroundColors !== undefined && options.options.backgroundColors === undefined) {
+            options.options.backgroundColors = options.backgroundColors;
         }
 
         // Bridge djangocms-text's flat settings into the cmsPlugin config namespace

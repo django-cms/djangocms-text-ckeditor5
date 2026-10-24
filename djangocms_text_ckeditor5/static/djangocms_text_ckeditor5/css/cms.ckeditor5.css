@@ -34,6 +34,25 @@
     display: none  !important;
 }
 
+.cms-class-color-swatch {
+    display: inline-block;
+    flex-shrink: 0;
+    width: 1.5em;
+    text-align: center;
+    font-weight: bold;
+    margin-inline-end: 0.5em;
+}
+
+.cms-background-color-swatch {
+    border: 1px solid var(--dca-gray-lighter);
+    border-radius: 2px;
+    /* Background swatches preview the fill without depending on its text color. */
+    font-size: 0;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-inline-end: 0.5rem;
+}
+
 form .form-row>div:not([class])>.flex-container>div:not(.related-widget-wrapper,.cke,.widget) {
     width: 100%;
     max-width: unset;
