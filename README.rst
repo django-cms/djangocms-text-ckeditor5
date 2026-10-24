@@ -16,6 +16,8 @@ Features
   ("CMS Plugins" dropdown, plus optional dedicated buttons for plugins
   with their own icon) and double-click an embedded plugin to edit it
   in place.
+- **Translated user interface**: The CKEditor 5 UI follows the language of
+  the django CMS admin.
 
 
 Installation
@@ -59,6 +61,33 @@ and set the editor you want to use:
 
     TEXT_EDITOR = "djangocms_text_ckeditor5.ckeditor5"
 
+
+Configuration
+-------------
+
+The editor reads ``TEXT_EDITOR_SETTINGS`` from ``djangocms-text``. Its toolbar
+uses the CKEditor 4 item names shared by all ``djangocms-text`` editors; they
+are translated to the matching CKEditor 5 components (``Table`` becomes
+``insertTable``, ``TextColor`` becomes ``fontColor``, and so on). Items that
+CKEditor 5 has no counterpart for -- ``Unlink``, ``Maximize``,
+``PasteFromWord``, ``InlineQuote``, ... -- are dropped, as are buttons for CMS
+plugins that are not installed. CKEditor 5 component names can be used
+directly as well.
+
+Toolbar items are grouped into a dropdown once the toolbar runs out of space.
+To lay them out in several rows instead, set ``shouldNotGroupWhenFull``:
+
+.. code-block:: python
+
+    TEXT_EDITOR_SETTINGS = {
+        "shouldNotGroupWhenFull": True,
+    }
+
+The user interface language follows the active Django language. The
+translations ship with the package and are loaded on demand, so only the
+language actually in use is transferred. A regional code falls back to its
+base language (``de-at`` uses the German translation); languages CKEditor 5
+does not translate stay in English.
 
 Styling the editor content
 --------------------------

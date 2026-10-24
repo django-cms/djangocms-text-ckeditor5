@@ -1,6 +1,6 @@
-/* eslint-env es6 */
-/* jshint esversion: 6 */
-/* global document, window, console */
+/* eslint-env es11 */
+/* jshint esversion: 11 */
+/* global document, window, console, __webpack_public_path__ */
 
 // CKEditor 5 v44+ ships its theme CSS as a separate bundle in the meta package.
 // Importing it here gets it injected via style-loader at editor-load time.
@@ -10,6 +10,7 @@ import 'ckeditor5/ckeditor5.css';
 import { ClassicEditor as ClassicEditorBase } from '@ckeditor/ckeditor5-editor-classic';
 import { InlineEditor as InlineEditorBase } from '@ckeditor/ckeditor5-editor-inline';
 import { BlockToolbar } from '@ckeditor/ckeditor5-ui';
+import { add as addTranslation } from '@ckeditor/ckeditor5-utils';
 
 import { Essentials } from '@ckeditor/ckeditor5-essentials';
 import { Autoformat } from '@ckeditor/ckeditor5-autoformat';
@@ -28,6 +29,7 @@ import { Font } from '@ckeditor/ckeditor5-font';
 import { BlockQuote } from '@ckeditor/ckeditor5-block-quote';
 import { CodeBlock } from '@ckeditor/ckeditor5-code-block';
 import { Heading, HeadingButtonsUI } from '@ckeditor/ckeditor5-heading';
+import { Highlight } from '@ckeditor/ckeditor5-highlight';
 import { Indent } from '@ckeditor/ckeditor5-indent';
 import { Link } from '@ckeditor/ckeditor5-link';
 import { List } from '@ckeditor/ckeditor5-list';
@@ -46,6 +48,19 @@ import { GeneralHtmlSupport } from '@ckeditor/ckeditor5-html-support';
 import CmsPlugin from './ckeditor5_plugins/ckeditor5.cmsplugin/index';
 import CmsLink from "./ckeditor5_plugins/ckeditor5.cmslink/index";
 import { parseBodyClasses } from './ckeditor5_plugins/ckeditor5.cmsplugin/src/utils';
+import { PLUGIN_NAMES, UNSUPPORTED_PLUGINS, buildToolbars, splitToolbarConfig } from './cms.ckeditor5.toolbar';
+import { translationCandidates, uiLanguage } from './cms.ckeditor5.language';
+
+// The lazily loaded translation chunks sit next to this bundle, below the app's
+// static directory. Derive their base URL from the URL this bundle was served
+// from so it works under any STATIC_URL, including a CDN.
+const bundle = document.currentScript || Array.prototype.slice
+    .call(document.querySelectorAll('script[src]'))
+    .reverse()
+    .find((script) => /\/bundle\.ckeditor5[.\w-]*\.js/.test(script.src));
+if (bundle && bundle.src) {
+    __webpack_public_path__ = new URL('../', bundle.src).href;
+}
 
 class ClassicEditor extends ClassicEditorBase {}
 class InlineEditor extends InlineEditorBase {}
@@ -71,6 +86,7 @@ const builtinPlugins = [
     GeneralHtmlSupport,
 	Heading,
     HeadingButtonsUI,
+    Highlight,
     HorizontalLine,
     // Base64UploadAdapter,
 	// Image,
@@ -148,7 +164,8 @@ const defaultConfig = {
             },
         ]
     },
-	// This value must be kept in sync with the language defined in webpack.config.js.
+	// The bundle carries the English source strings; every other language is
+	// fetched as a separate chunk, see `_loadTranslations()` below.
 	language: 'en',
 };
 
@@ -185,20 +202,14 @@ InlineEditor.defaultConfig = {
 class CmsCKEditor5Plugin {
     constructor(props) {
         this._editors = {};
+        // Editors whose translations are still loading, so a second create()
+        // for the same element does not start a second editor.
+        this._pending = new Set();
+        // Language code -> promise resolving once its translations are registered.
+        this._translations = new Map();
         this._CSS = [];
-        this._pluginNames = {
-            Table: 'insertTable',
-            Source: 'SourceEditing',
-            HorizontalRule: 'horizontalLine',
-            JustifyLeft: 'Alignment',
-            Strike: 'Strikethrough',
-            Styles: 'Style',
-            CMSPlugins: 'cms-plugin',
-        };
-        this._unsupportedPlugins = [
-            'Unlink', 'PasteFromWord', 'PasteText', 'Maximize',
-            'JustifyCenter', 'JustifyRight', 'JustifyBlock'
-        ];
+        this._pluginNames = {...PLUGIN_NAMES};
+        this._unsupportedPlugins = [...UNSUPPORTED_PLUGINS];
         this._blockItems = [];
         for (const item of InlineEditor.defaultConfig.blockToolbar.items) {
             if (item !== '|') {
@@ -209,49 +220,93 @@ class CmsCKEditor5Plugin {
 
     // initializes the editor on the target element, with the given html code
     create (el, inModal, content, options, save_callback) {
-        if (!(el.id in this._editors)) {
+        if (!(el.id in this._editors) && !this._pending.has(el.id)) {
             const inline = el.tagName !== 'TEXTAREA';
             this._update_options(options, inline);
-            const bodyClasses = parseBodyClasses(options.options.bodyClass);
-            if (!inline) {
-                ClassicEditor.create(el, options.options).then( editor => {
-                    this._applyBodyClasses(editor, bodyClasses);
-                    this._editors[el.id] = editor;
+            // The UI translations live in separate chunks and have to be
+            // registered before the editor builds its locale.
+            this._pending.add(el.id);
+            this._loadTranslations(options.options.language).then(
+                () => this._create(el, inline, options, save_callback)
+            ).finally(() => this._pending.delete(el.id));
+        }
+    }
+
+    // Fetches the CKEditor 5 UI translations for the given language and
+    // registers them under exactly that code, so a regional code served by its
+    // base language's file still resolves. Always resolves: a missing
+    // translation just leaves the UI in English.
+    _loadTranslations (language) {
+        const code = uiLanguage(language);
+        if (!code) {
+            return Promise.resolve();
+        }
+        if (!this._translations.has(code)) {
+            this._translations.set(code, this._fetchTranslations(code));
+        }
+        return this._translations.get(code);
+    }
+
+    async _fetchTranslations (code) {
+        for (const candidate of translationCandidates(code)) {
+            try {
+                const module = await import(
+                    /* webpackChunkName: "translations-[request]" */
+                    /* webpackExclude: /\.umd\.js$/ */
+                    `ckeditor5-translations/${candidate}.js`
+                );
+                const translations = module.default || module;
+                for (const translation of Object.values(translations)) {
+                    addTranslation(code, translation.dictionary, translation.getPluralForm);
+                }
+                return;
+            } catch {
+                // Not shipped by CKEditor 5 — try the next, less specific candidate.
+            }
+        }
+        console.warn(`djangocms-text-ckeditor5: no CKEditor 5 translations for "${code}"`);
+    }
+
+    _create (el, inline, options, save_callback) {
+        const bodyClasses = parseBodyClasses(options.options.bodyClass);
+        if (!inline) {
+            return ClassicEditor.create(el, options.options).then( editor => {
+                this._applyBodyClasses(editor, bodyClasses);
+                this._editors[el.id] = editor;
+            });
+        } else {
+            return InlineEditor.create(el, options.options).then( editor => {
+                el.classList.remove('ck-content');  // remove Ckeditor 5 default styles
+                editor.editing.view.change(writer => {
+                    const editableElement = editor.editing.view.document.getRoot();
+                    writer.removeClass('ck-content', editableElement);
                 });
-            } else {
-                InlineEditor.create(el, options.options).then( editor => {
-                    el.classList.remove('ck-content');  // remove Ckeditor 5 default styles
-                    editor.editing.view.change(writer => {
-                        const editableElement = editor.editing.view.document.getRoot();
-                        writer.removeClass('ck-content', editableElement);
-                    });
-                    this._applyBodyClasses(editor, bodyClasses);
-                    this._editors[el.id] = editor;
-                    editor.isDirty = false;
-                    editor.model.document.on('change:data', () => editor.isDirty = true);
-                    editor.ui.focusTracker.on('change:isFocused', ( evt, name, isFocused ) => {
-                        if ( !isFocused && editor.isDirty) {
-                            el.dataset.changed = 'true';
-                            save_callback();
-                            editor.isDirty = false;
-                            el.classList.remove('ck-content');  // remove Ckeditor 5 default styles
-                        }
-                    });
-                    const styles = document.querySelectorAll('style[data-cke="true"]');
-                    if (styles.length > 0) {
-                        // Styles are installed in the document head, but we need to clone them
-                        // for later recovery
-                        styles.forEach((style) => {
-                                if (this._CSS.indexOf(style) === -1) {
-                                    this._CSS.push(style.cloneNode(true));
-                                }
-                            }
-                        );
-                    } else {
-                        this._CSS.forEach((style) => document.head.appendChild(style));
+                this._applyBodyClasses(editor, bodyClasses);
+                this._editors[el.id] = editor;
+                editor.isDirty = false;
+                editor.model.document.on('change:data', () => editor.isDirty = true);
+                editor.ui.focusTracker.on('change:isFocused', ( evt, name, isFocused ) => {
+                    if ( !isFocused && editor.isDirty) {
+                        el.dataset.changed = 'true';
+                        save_callback();
+                        editor.isDirty = false;
+                        el.classList.remove('ck-content');  // remove Ckeditor 5 default styles
                     }
                 });
-            }
+                const styles = document.querySelectorAll('style[data-cke="true"]');
+                if (styles.length > 0) {
+                    // Styles are installed in the document head, but we need to clone them
+                    // for later recovery
+                    styles.forEach((style) => {
+                            if (this._CSS.indexOf(style) === -1) {
+                                this._CSS.push(style.cloneNode(true));
+                            }
+                        }
+                    );
+                } else {
+                    this._CSS.forEach((style) => document.head.appendChild(style));
+                }
+            });
         }
     }
 
@@ -330,63 +385,30 @@ class CmsCKEditor5Plugin {
             };
         }
 
-        let blockToolbar = [];
-        let topToolbar = [];
-        let addingToBlock = false;
-
-        const buildToolbars = (items) => {
-            for (let item of items) {
-                // Transform
-                if (this._pluginNames[item] !== undefined) {
-                    item = this._pluginNames[item];
-                }
-
-                // Add (if applicable)
-                if (Array.isArray(item) || Array.isArray(item.items)) {
-                    if (addingToBlock) {
-                        if (blockToolbar.length > 0) {
-                            blockToolbar.push('|');
-                        }
-                    } else if (topToolbar.length > 0) {
-                        topToolbar.push('|');
-                    }
-                    buildToolbars(Array.isArray(item) ? item : item.items);
-                } else if (inline && ['ShowBlocks', 'SourceEditing'].includes(item)) {
-                    // No source editing or show blocks in inline editor
-                    continue;
-                } else if (this._unsupportedPlugins.includes(item) || item === '-') {
-                    // Skip items with no CKEditor 5 equivalent
-                    continue;
-                } else if (item === 'Format') {
-                    // Expand "Format" widget in inline editor
-                    item = 'heading';
-                    if (inline) {
-                        blockToolbar.push('paragraph', 'heading2', 'heading3', 'heading4', 'heading5');
-                        addingToBlock = true;
-                        item = '|';
-                    }
-                } else if (item === '|') {
-                    if (addingToBlock) {
-                        blockToolbar.push(item);
-                    } else {
-                        topToolbar.push(item);
-                    }
-                } else if (typeof item === 'string' && this._blockItems.includes(item.toLowerCase()) && inline) {
-                    blockToolbar.push(item);
-                    addingToBlock = true;
-                } else {
-                    topToolbar.push(item);
-                    addingToBlock = false;
+        // `shouldNotGroupWhenFull` is a toolbar option, but djangocms-text's
+        // settings are flat, so accept it at the top level as well.
+        const {options: toolbarOptions} = splitToolbarConfig(options.options.toolbar);
+        const {options: blockToolbarOptions} = splitToolbarConfig(options.options.blockToolbar);
+        if (options.options.shouldNotGroupWhenFull !== undefined) {
+            for (const target of [toolbarOptions, blockToolbarOptions]) {
+                if (target.shouldNotGroupWhenFull === undefined) {
+                    target.shouldNotGroupWhenFull = options.options.shouldNotGroupWhenFull;
                 }
             }
-        };
+        }
 
-        buildToolbars(options.options.toolbar || []);
-        if (topToolbar.length > 0) {
-            options.options.toolbar = {items: topToolbar};
+        const {toolbar, blockToolbar} = buildToolbars(options.options.toolbar, {
+            inline,
+            blockItems: this._blockItems,
+            pluginNames: this._pluginNames,
+            unsupportedPlugins: this._unsupportedPlugins,
+            cmsPlugins: cmsPlugin.installed_plugins,
+        });
+        if (toolbar.length > 0) {
+            options.options.toolbar = {...toolbarOptions, items: toolbar};
         }
         if (blockToolbar.length > 0) {
-            options.options.blockToolbar = {items: blockToolbar};
+            options.options.blockToolbar = {...blockToolbarOptions, items: blockToolbar};
         }
     }
 
