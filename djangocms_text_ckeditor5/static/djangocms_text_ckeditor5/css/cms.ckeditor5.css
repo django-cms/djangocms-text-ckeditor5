@@ -19,7 +19,7 @@
     }
     button {
         width: auto  !important;
-        padding: var(--ck-spacing-tiny)  !important;
+        padding: var(--ck-spacing-xs)  !important;
         border: 1px solid transparent  !important;
     }
     .ck.ck-list button {
@@ -32,6 +32,25 @@
 
 .ck-powered-by {
     display: none  !important;
+}
+
+.cms-class-color-swatch {
+    display: inline-block;
+    flex-shrink: 0;
+    width: 1.5em;
+    text-align: center;
+    font-weight: bold;
+    margin-inline-end: 0.5em;
+}
+
+.cms-background-color-swatch {
+    border: 1px solid var(--dca-gray-lighter);
+    border-radius: 2px;
+    /* Background swatches preview the fill without depending on its text color. */
+    font-size: 0;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-inline-end: 0.5rem;
 }
 
 form .form-row>div:not([class])>.flex-container>div:not(.related-widget-wrapper,.cke,.widget) {
@@ -52,6 +71,11 @@ body {
     --ck-color-text: var(--dca-black);
     --ck-color-dropdown-panel-background: var(--dca-white);
     --ck-color-dropdown-panel-border: var(--dca-gray-lighter);
+    --ck-color-list-background: var(--dca-white);
+    --ck-dropdown-list-background-color: var(--dca-white);
+    --ck-button-default-hover-background-color: var(--dca-gray-lightest);
+    --ck-button-default-active-background-color: var(--dca-gray-lighter);
+    --ck-list-button-hover-background-color: var(--dca-gray-lightest);
 }
 
 body.change-form .ck-editor__main {
