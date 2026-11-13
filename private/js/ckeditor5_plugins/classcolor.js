@@ -29,14 +29,7 @@ export function createClassColorPlugins({
             const {model} = this.editor;
             const {selection} = model.document;
             model.change(writer => {
-                // Match Tiptap: changing a color with the caret inside colored text
-                // updates the whole colored section rather than only future typing.
-                if (selection.isCollapsed && selection.hasAttribute(ATTRIBUTE)) {
-                    const range = findAttributeRange(
-                        selection.getFirstPosition(), ATTRIBUTE, selection.getAttribute(ATTRIBUTE), model
-                    );
-                    if (!range.isCollapsed) writer.setSelection(range);
-                }
+                let ranges = selection.getRanges();
                 if (selection.isCollapsed) {
                     writer.removeSelectionAttribute(inlineAttribute);
                     if (value) {
@@ -44,15 +37,20 @@ export function createClassColorPlugins({
                     } else {
                         writer.removeSelectionAttribute(ATTRIBUTE);
                     }
-                } else {
-                    for (const range of model.schema.getValidRanges(selection.getRanges(), ATTRIBUTE)) {
-                        // Inline colors would override the class's stylesheet rule.
-                        writer.removeAttribute(inlineAttribute, range);
-                        if (value) {
-                            writer.setAttribute(ATTRIBUTE, value, range);
-                        } else {
-                            writer.removeAttribute(ATTRIBUTE, range);
-                        }
+                    // Match Tiptap: changing a color with the caret inside colored text
+                    // updates the whole colored section rather than only future typing.
+                    // The caret itself stays where it is.
+                    const current = this.value;
+                    if (!current) return;
+                    ranges = [findAttributeRange(selection.getFirstPosition(), ATTRIBUTE, current, model)];
+                }
+                for (const range of model.schema.getValidRanges(ranges, ATTRIBUTE)) {
+                    // Inline colors would override the class's stylesheet rule.
+                    writer.removeAttribute(inlineAttribute, range);
+                    if (value) {
+                        writer.setAttribute(ATTRIBUTE, value, range);
+                    } else {
+                        writer.removeAttribute(ATTRIBUTE, range);
                     }
                 }
             });
@@ -71,6 +69,9 @@ export function createClassColorPlugins({
             this.colors = Object.fromEntries(Object.entries(configured).filter(
                 ([name, definition]) => name && !/\s/.test(name) && typeof definition?.name === 'string'
             ));
+            // Content saved with the default palette keeps its classes when a site
+            // configures its own: they are still read and written, just not offered.
+            const known = [...new Set([...Object.keys(this.colors), ...Object.keys(defaultColors)])];
             editor.model.schema.extend('$text', {allowAttributes: ATTRIBUTE});
             editor.model.schema.setAttributeProperties(ATTRIBUTE, {
                 isFormatting: true,
@@ -78,7 +79,7 @@ export function createClassColorPlugins({
             });
             editor.conversion.for('upcast').add(dispatcher => {
                 dispatcher.on('element', (event, data, api) => {
-                    const name = Object.keys(this.colors).find(name => data.viewItem.hasClass(name));
+                    const name = known.find(name => data.viewItem.hasClass(name));
                     if (!name || !api.consumable.test(data.viewItem, {classes: [name]})) return;
                     if (!data.modelRange) {
                         Object.assign(data, api.convertChildren(data.viewItem, data.modelCursor));

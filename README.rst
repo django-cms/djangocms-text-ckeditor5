@@ -114,7 +114,11 @@ The default classes are ``text-primary``, ``text-secondary``, ``text-success``,
 Define the classes in your site's CSS and load that CSS in the editor too.
 Menu previews use these same classes; the plugin does not supply color values.
 Configured color classes are recognized on existing spans and other HTML
-elements. Applying a class clears any inline text color on the selection so
+elements. Default classes already present in content are kept when you replace
+the palette, though the menu no longer offers them. Classes from an earlier
+custom palette are not known to the editor and are dropped on the next save, so
+keep them in ``textColors`` for as long as content uses them. The same applies
+to ``backgroundColors``. Applying a class clears any inline text color on the selection so
 the class can take effect. Existing inline colors remain supported by
 CKEditor's native ``fontColor`` toolbar item, which can be configured separately.
 

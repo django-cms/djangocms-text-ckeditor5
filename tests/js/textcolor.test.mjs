@@ -38,13 +38,21 @@ describe('class-based text colors', () => {
     });
 
     it('replaces the default palette with configured classes', async () => {
-        await create('<p><span class="brand-ink">One</span> <span class="text-primary">Two</span></p>', {
+        await create('<p><span class="brand-ink">One</span> Two</p>', {
             textColors: {'brand-ink': {name: 'Brand ink'}},
         });
-        assert.equal(editor.getData(), '<p><span class="brand-ink">One</span> Two</p>');
         selectAll();
         editor.execute('cmsTextColor', {value: 'text-primary'});
         assert.equal(editor.getData(), '<p><span class="brand-ink">One</span> Two</p>');
+    });
+
+    it('keeps existing default classes that a configured palette no longer offers', async () => {
+        const data = '<p><span class="brand-ink">One</span> <span class="text-primary">Two</span></p>';
+        await create(data, {textColors: {'brand-ink': {name: 'Brand ink'}}});
+        assert.equal(editor.getData(), data);
+        selectAll();
+        editor.execute('cmsTextColor');
+        assert.equal(editor.getData(), '<p>One Two</p>');
     });
 
     it('replaces existing class and inline colors in one undoable operation', async () => {
@@ -100,6 +108,15 @@ describe('class-based text colors', () => {
         editor.model.change(writer => writer.setSelection(editor.model.document.getRoot().getChild(0), 2));
         editor.execute('cmsTextColor', {value: 'text-danger'});
         assert.equal(editor.getData(), '<p><span class="text-danger">One <strong>Two</strong></span> Three</p>');
+        // The caret stays put, so typing continues instead of replacing the section.
+        const {selection} = editor.model.document;
+        assert.equal(selection.isCollapsed, true);
+        assert.equal(selection.getFirstPosition().offset, 2);
+        assert.equal(selection.getAttribute('cmsTextColor'), 'text-danger');
+        editor.execute('cmsTextColor');
+        assert.equal(editor.getData(), '<p>One <strong>Two</strong> Three</p>');
+        assert.equal(selection.isCollapsed, true);
+        assert.equal(selection.hasAttribute('cmsTextColor'), false);
     });
 
     it('keeps nested colors and paragraph structure when reading block classes', async () => {

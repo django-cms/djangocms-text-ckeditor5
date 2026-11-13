@@ -11,6 +11,8 @@ Changelog
   ``textColors`` and ``backgroundColors``. Both tools support color previews,
   toggling, removal, and undo/redo; text and background colors are independent.
   Load the classes' CSS in both the site and the editor.
+  Default color classes in existing content are kept when a custom palette
+  replaces the defaults.
 * change: ``TextColor`` and ``BGColor`` now select the class-based tools.
   To activate the original inline-style color palettes, replace these toolbar
   items with ``fontColor`` and ``fontBackgroundColor`` respectively in
