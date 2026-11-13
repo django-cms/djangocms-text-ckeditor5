@@ -9,6 +9,8 @@ function installDom() {
     globalThis.document = dom.window.document;
     globalThis.window = dom.window;
     globalThis.HTMLElement = dom.window.HTMLElement;
+    globalThis.Node = dom.window.Node;
+    globalThis.HTMLTemplateElement = dom.window.HTMLTemplateElement;
     globalThis.DOMParser = dom.window.DOMParser;
 }
 

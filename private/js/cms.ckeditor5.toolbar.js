@@ -23,8 +23,8 @@ export const PLUGIN_NAMES = {
     // All three names collapse onto it; duplicates are dropped below.
     BlockStyles: 'Style',
     InlineStyles: 'Style',
-    TextColor: 'fontColor',
-    BGColor: 'fontBackgroundColor',
+    TextColor: 'cmsTextColor',
+    BGColor: 'cmsBackgroundColor',
     CMSPlugins: 'cms-plugin',
 };
 
