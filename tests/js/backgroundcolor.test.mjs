@@ -119,4 +119,39 @@ describe('class-based background colors', () => {
         editor.execute('cmsBackgroundColor');
         assert.equal(editor.getData(), '<p>One<span class="bg-success"> Two</span></p>');
     });
+    for (const value of ['bg-success', null]) {
+        it(`replaces an inline background-color at a caret with ${value ?? 'no color'}`, async () => {
+            await create('<p><span style="background-color:red;">One <strong>Two</strong></span> Three</p>');
+            const original = editor.getData();
+            editor.model.change(writer => writer.setSelection(editor.model.document.getRoot().getChild(0), 2));
+            editor.execute('cmsBackgroundColor', {value});
+            const expected = value
+                ? `<p><span class="${value}">One <strong>Two</strong></span> Three</p>`
+                : '<p>One <strong>Two</strong> Three</p>';
+            assert.equal(editor.getData(), expected);
+            const {selection} = editor.model.document;
+            assert.equal(selection.isCollapsed, true);
+            assert.equal(selection.getFirstPosition().offset, 2);
+            assert.equal(selection.hasAttribute('fontBackgroundColor'), false);
+            assert.equal(selection.getAttribute('cmsBackgroundColor'), value ?? undefined);
+            editor.execute('undo');
+            assert.equal(editor.getData(), original);
+            editor.execute('redo');
+            assert.equal(editor.getData(), expected);
+        });
+    }
+
+    for (const [textClass, backgroundClass] of [
+        ['brand-shared', 'brand-shared'],
+        ['bg-primary', 'brand-fill'],
+        ['brand-ink', 'text-primary'],
+    ]) {
+        it(`rejects overlapping palette classes: ${textClass} / ${backgroundClass}`, async () => {
+            await assert.rejects(create('<p>One</p>', {
+                textColors: {[textClass]: {name: 'Text'}},
+                backgroundColors: {[backgroundClass]: {name: 'Background'}},
+            }), /cms-class-color-overlapping-palettes/);
+        });
+    }
+
 });

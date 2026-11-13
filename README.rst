@@ -149,6 +149,24 @@ For example, ``.brand-fill { background-color: #ffe599; }`` produces
 ``<span class="brand-fill">...</span>`` when selected. The native
 ``fontBackgroundColor`` toolbar item remains available for inline colors.
 
+Text and background palettes must use distinct class names, including the
+default classes retained for existing content. Overlapping classes prevent
+editor initialization with ``cms-class-color-overlapping-palettes``; the error
+identifies the class and palettes to correct.
+
+Deploying class-based colors
+----------------------------
+
+Before enabling these palettes, deploy the new editor bundle to every application
+instance and collect static files. Use versioned static asset URLs (for example,
+Django's ``ManifestStaticFilesStorage``) and invalidate any cached HTML or assets
+that still reference the previous bundle. Have editors reload open editing pages
+before resuming content changes. During a rolling deployment, pause editing until
+all instances serve the new bundle: older editors do not recognize these classes
+and can strip color formatting when they save newly formatted content. Apply the
+same precautions before a rollback; migrate class-based content or retain a
+compatible editor before allowing edits with an older version.
+
 Activating the legacy color palettes
 -----------------------------------
 

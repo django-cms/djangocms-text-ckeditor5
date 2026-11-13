@@ -18,6 +18,9 @@ Changelog
   items with ``fontColor`` and ``fontBackgroundColor`` respectively in
   ``TEXT_EDITOR_SETTINGS["toolbar"]``. Existing inline colors remain supported.
 * fix: Update linkfield css
+* fix: Replace or remove existing inline colors at a caret without moving the
+  caret. Reject overlapping text and background palette classes to prevent
+  formatting loss, and document deployment precautions for older editor bundles.
 
 0.48.1 (2026-09-14)
 ===================

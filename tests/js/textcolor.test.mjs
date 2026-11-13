@@ -44,6 +44,8 @@ describe('class-based text colors', () => {
         selectAll();
         editor.execute('cmsTextColor', {value: 'text-primary'});
         assert.equal(editor.getData(), '<p><span class="brand-ink">One</span> Two</p>');
+        editor.execute('cmsTextColor', {value: 'brand-ink'});
+        assert.equal(editor.getData(), '<p><span class="brand-ink">One Two</span></p>');
     });
 
     it('keeps existing default classes that a configured palette no longer offers', async () => {
@@ -133,4 +135,26 @@ describe('class-based text colors', () => {
         editor.execute('cmsTextColor', {value: 'text-danger'});
         assert.equal(editor.getData(), '<p><span class="text-primary">One </span><span class="text-danger">Two</span></p>');
     });
+    for (const value of ['text-danger', null]) {
+        it(`replaces an inline color at a caret with ${value ?? 'no color'}`, async () => {
+            await create('<p><span style="color:red;">One <strong>Two</strong></span> Three</p>');
+            const original = editor.getData();
+            editor.model.change(writer => writer.setSelection(editor.model.document.getRoot().getChild(0), 2));
+            editor.execute('cmsTextColor', {value});
+            const expected = value
+                ? `<p><span class="${value}">One <strong>Two</strong></span> Three</p>`
+                : '<p>One <strong>Two</strong> Three</p>';
+            assert.equal(editor.getData(), expected);
+            const {selection} = editor.model.document;
+            assert.equal(selection.isCollapsed, true);
+            assert.equal(selection.getFirstPosition().offset, 2);
+            assert.equal(selection.hasAttribute('fontColor'), false);
+            assert.equal(selection.getAttribute('cmsTextColor'), value ?? undefined);
+            editor.execute('undo');
+            assert.equal(editor.getData(), original);
+            editor.execute('redo');
+            assert.equal(editor.getData(), expected);
+        });
+    }
+
 });

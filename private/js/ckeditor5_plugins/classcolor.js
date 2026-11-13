@@ -1,7 +1,9 @@
 import { Command, Plugin } from '@ckeditor/ckeditor5-core';
-import { Collection, priorities } from '@ckeditor/ckeditor5-utils';
+import { CKEditorError, Collection, priorities } from '@ckeditor/ckeditor5-utils';
 import { addListToDropdown, createDropdown, UIModel, View } from '@ckeditor/ckeditor5-ui';
 import { findAttributeRange } from '@ckeditor/ckeditor5-typing';
+
+const palettes = new WeakMap();
 
 // Both menus use the same conversion and command behavior, with independent
 // model attributes so changing one color never clears the other.
@@ -31,18 +33,22 @@ export function createClassColorPlugins({
             model.change(writer => {
                 let ranges = selection.getRanges();
                 if (selection.isCollapsed) {
+                    // Match Tiptap: update the whole colored section at a caret,
+                    // including native inline colors, without moving the caret.
+                    // Read the existing attributes before changing typing attributes.
+                    const rangeAttribute = selection.hasAttribute(ATTRIBUTE) ? ATTRIBUTE : inlineAttribute;
+                    const current = selection.getAttribute(rangeAttribute);
+                    if (current !== undefined) {
+                        ranges = [findAttributeRange(selection.getFirstPosition(), rangeAttribute, current, model)];
+                    } else {
+                        ranges = [];
+                    }
                     writer.removeSelectionAttribute(inlineAttribute);
                     if (value) {
                         writer.setSelectionAttribute(ATTRIBUTE, value);
                     } else {
                         writer.removeSelectionAttribute(ATTRIBUTE);
                     }
-                    // Match Tiptap: changing a color with the caret inside colored text
-                    // updates the whole colored section rather than only future typing.
-                    // The caret itself stays where it is.
-                    const current = this.value;
-                    if (!current) return;
-                    ranges = [findAttributeRange(selection.getFirstPosition(), ATTRIBUTE, current, model)];
                 }
                 for (const range of model.schema.getValidRanges(ranges, ATTRIBUTE)) {
                     // Inline colors would override the class's stylesheet rule.
@@ -72,6 +78,19 @@ export function createClassColorPlugins({
             // Content saved with the default palette keeps its classes when a site
             // configures its own: they are still read and written, just not offered.
             const known = [...new Set([...Object.keys(this.colors), ...Object.keys(defaultColors)])];
+            // A shared class cannot be removed independently for text/background.
+            // Include preserved defaults, since those are also recognized on import.
+            if (!palettes.has(editor)) palettes.set(editor, new Map());
+            const registered = palettes.get(editor);
+            for (const [otherConfig, classes] of registered) {
+                const overlap = known.find(name => classes.has(name));
+                if (overlap) {
+                    throw new CKEditorError('cms-class-color-overlapping-palettes', editor, {
+                        className: overlap, palettes: [otherConfig, configName],
+                    });
+                }
+            }
+            registered.set(configName, new Set(known));
             editor.model.schema.extend('$text', {allowAttributes: ATTRIBUTE});
             editor.model.schema.setAttributeProperties(ATTRIBUTE, {
                 isFormatting: true,
