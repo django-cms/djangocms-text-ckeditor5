@@ -90,7 +90,7 @@ base language (``de-at`` uses the German translation); languages CKEditor 5
 does not translate stay in English.
 
 Class-based text colors
-----------------------
+-----------------------
 
 The ``TextColor`` toolbar item uses the same class-based palette as
 djangocms-text's Tiptap editor. Choosing a color writes, for example,
@@ -183,7 +183,7 @@ same precautions before a rollback; migrate class-based content or retain a
 compatible editor before allowing edits with an older version.
 
 Activating the legacy color palettes
------------------------------------
+------------------------------------
 
 To use CKEditor's original palettes that write inline ``color`` and
 ``background-color`` styles, replace ``TextColor`` with ``fontColor`` and
