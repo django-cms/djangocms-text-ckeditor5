@@ -63,7 +63,7 @@ describe('cleanSeparators', () => {
 describe('buildToolbars', () => {
     it('maps djangocms-text item names onto CKEditor 5 components', () => {
         const {toolbar} = buildToolbars([['Table', 'Source', 'HorizontalRule', 'TextColor', 'BGColor']]);
-        assert.deepEqual(toolbar, ['insertTable', 'SourceEditing', 'horizontalLine', 'fontColor', 'fontBackgroundColor']);
+        assert.deepEqual(toolbar, ['insertTable', 'SourceEditing', 'horizontalLine', 'cmsTextColor', 'cmsBackgroundColor']);
     });
 
     it('drops items without a CKEditor 5 counterpart', () => {
@@ -119,7 +119,7 @@ describe('buildToolbars', () => {
         for (const item of unavailable) {
             assert.equal(toolbar.includes(item), false, `${item} should not reach CKEditor 5`);
         }
-        for (const item of ['heading', 'Style', 'fontColor', 'fontBackgroundColor', 'Highlight']) {
+        for (const item of ['heading', 'Style', 'cmsTextColor', 'cmsBackgroundColor', 'Highlight']) {
             assert.equal(toolbar.includes(item), true, `${item} should reach CKEditor 5`);
         }
         assert.deepEqual(blockToolbar, []);
