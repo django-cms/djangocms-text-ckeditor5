@@ -21,6 +21,8 @@ Changelog
 * fix: Replace or remove existing inline colors at a caret without moving the
   caret. Reject overlapping text and background palette classes to prevent
   formatting loss, and document deployment precautions for older editor bundles.
+* fix: Report invalid color palette entries as configuration errors and document
+  which class takes precedence when imported HTML has conflicting color classes.
 
 0.48.1 (2026-09-14)
 ===================

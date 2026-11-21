@@ -154,4 +154,60 @@ describe('class-based background colors', () => {
         });
     }
 
+    for (const [configName, command, defaultClass] of [
+        ['textColors', 'cmsTextColor', 'text-primary'],
+        ['backgroundColors', 'cmsBackgroundColor', 'bg-primary'],
+    ]) {
+        for (const [description, palette, className] of [
+            ['whitespace in class', {'bad class': {name: 'Bad'}}, 'bad class'],
+            ['empty class', {'': {name: 'Bad'}}, ''],
+            ['missing name', {'brand-color': {}}, 'brand-color'],
+            ['non-string name', {'brand-color': {name: 42}}, 'brand-color'],
+            ['null definition', {'brand-color': null}, 'brand-color'],
+            ['array palette', [], undefined],
+            ['string palette', 'brand-color', undefined],
+            ['boolean palette', false, undefined],
+        ]) {
+            it(`rejects ${description} in ${configName} with configuration details`, async () => {
+                await assert.rejects(create('<p>One</p>', {[configName]: palette}), error => {
+                    assert.match(error.message, /^cms-class-color-invalid-palette/);
+                    assert.equal(error.data.palette, configName);
+                    assert.equal(error.data.className, className);
+                    return true;
+                });
+            });
+        }
+
+        it(`uses defaults for null ${configName}`, async () => {
+            await create('<p>One</p>', {[configName]: null});
+            selectAll();
+            editor.execute(command, {value: defaultClass});
+            assert.equal(editor.getData(), `<p><span class="${defaultClass}">One</span></p>`);
+        });
+
+        it(`allows an empty ${configName} while preserving default content`, async () => {
+            const data = `<p><span class="${defaultClass}">One</span></p>`;
+            await create(data, {[configName]: {}});
+            assert.equal(editor.getData(), data);
+            assert.deepEqual(editor.commands.get(command).colors, {});
+        });
+
+        it(`resolves conflicting ${configName} by palette order and preserves nested overrides`, async () => {
+            await create(`<p><span class="brand-first brand-second ${defaultClass}">One</span> ` +
+                `<span class="brand-second brand-first">Two</span> ` +
+                `<span class="brand-second">Outer <span class="brand-first">Inner</span></span></p>`, {
+                [configName]: {
+                    'brand-second': {name: 'Second'},
+                    'brand-first': {name: 'First'},
+                },
+            });
+            assert.equal(editor.getData(), '<p><span class="brand-second">One</span> ' +
+                '<span class="brand-second">Two</span> ' +
+                '<span class="brand-second">Outer </span><span class="brand-first">Inner</span></p>');
+            const normalized = editor.getData();
+            editor.setData(normalized);
+            assert.equal(editor.getData(), normalized);
+        });
+    }
+
 });

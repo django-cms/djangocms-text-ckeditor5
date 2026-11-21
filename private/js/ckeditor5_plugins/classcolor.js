@@ -72,11 +72,24 @@ export function createClassColorPlugins({
             const {editor} = this;
             // A configured palette replaces the defaults.
             const configured = editor.config.get(configName) ?? defaultColors;
-            this.colors = Object.fromEntries(Object.entries(configured).filter(
-                ([name, definition]) => name && !/\s/.test(name) && typeof definition?.name === 'string'
-            ));
+            if (typeof configured !== 'object' || Array.isArray(configured)) {
+                throw new CKEditorError('cms-class-color-invalid-palette', editor, {
+                    palette: configName, reason: 'Expected an object mapping CSS classes to color definitions.',
+                });
+            }
+            for (const [name, definition] of Object.entries(configured)) {
+                if (!name || /\s/.test(name) || typeof definition?.name !== 'string') {
+                    throw new CKEditorError('cms-class-color-invalid-palette', editor, {
+                        palette: configName, className: name,
+                        reason: 'Each entry must have a single non-empty CSS class and a string name.',
+                    });
+                }
+            }
+            this.colors = Object.fromEntries(Object.entries(configured));
             // Content saved with the default palette keeps its classes when a site
             // configures its own: they are still read and written, just not offered.
+            // For conflicting classes on one element, palette order wins:
+            // configured classes first, followed by remaining defaults.
             const known = [...new Set([...Object.keys(this.colors), ...Object.keys(defaultColors)])];
             // A shared class cannot be removed independently for text/background.
             // Include preserved defaults, since those are also recognized on import.

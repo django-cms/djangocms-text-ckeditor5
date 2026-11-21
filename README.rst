@@ -122,6 +122,21 @@ to ``backgroundColors``. Applying a class clears any inline text color on the se
 the class can take effect. Existing inline colors remain supported by
 CKEditor's native ``fontColor`` toolbar item, which can be configured separately.
 
+Each palette must be an object mapping a single non-empty CSS class (without
+whitespace) to a definition with a string ``name``. Invalid entries or palette
+types prevent editor initialization with ``cms-class-color-invalid-palette``;
+the error identifies the palette and, for an invalid entry, the class to correct.
+``null`` uses the default palette; an empty object offers no colors.
+
+Each element can retain one text color and one background color. If imported
+HTML contains several recognized classes from the same palette on one element,
+the first class in the configured palette's key order wins, followed by any
+remaining default classes in their documented order. The HTML class order and
+CSS rule order do not affect this choice. Saving keeps only the winning class
+from each palette. Use one class per palette on each element to preserve the
+intended appearance. Recognized classes on nested elements take precedence over
+classes on their ancestors. These rules also apply to ``backgroundColors``.
+
 Class-based background colors
 -----------------------------
 
